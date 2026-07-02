@@ -1,0 +1,16 @@
+import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod/v4";
+
+export const actionsTable = pgTable("actions", {
+  id:          serial("id").primaryKey(),
+  type:        text("type").notNull(),
+  description: text("description").notNull(),
+  metadata:    text("metadata"),
+  status:      text("status").notNull().default("success"), // success | failure | pending
+  createdAt:   timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertActionSchema = createInsertSchema(actionsTable).omit({ id: true, createdAt: true });
+export type InsertAction = z.infer<typeof insertActionSchema>;
+export type Action = typeof actionsTable.$inferSelect;

@@ -1,0 +1,1043 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: ARIA AI Coworker API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: agent
+    description: Agent configuration and status
+  - name: conversations
+    description: Chat conversations with ARIA
+  - name: tasks
+    description: Task queue management
+  - name: shell
+    description: Shell session management
+  - name: integrations
+    description: OAuth and external integrations
+  - name: memory
+    description: Agent persistent memory
+  - name: actions
+    description: Action audit log
+  - name: workflows
+    description: Automated workflows
+  - name: openai
+    description: OpenAI chat endpoints
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ─── Agent ───────────────────────────────────────────────────────────────────
+  /agent:
+    get:
+      operationId: getAgent
+      tags: [agent]
+      summary: Get agent profile and status
+      responses:
+        "200":
+          description: Agent profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+    patch:
+      operationId: updateAgent
+      tags: [agent]
+      summary: Update agent configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentUpdate"
+      responses:
+        "200":
+          description: Updated agent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+
+  /agent/stats:
+    get:
+      operationId: getAgentStats
+      tags: [agent]
+      summary: Get agent activity statistics
+      responses:
+        "200":
+          description: Agent statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentStats"
+
+  # ─── Conversations ────────────────────────────────────────────────────────────
+  /conversations:
+    get:
+      operationId: listConversations
+      tags: [conversations]
+      summary: List all conversations
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Conversation"
+    post:
+      operationId: createConversation
+      tags: [conversations]
+      summary: Start a new conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConversationInput"
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+
+  /conversations/{id}:
+    get:
+      operationId: getConversation
+      tags: [conversations]
+      summary: Get a conversation with its messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationWithMessages"
+    delete:
+      operationId: deleteConversation
+      tags: [conversations]
+      summary: Delete a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /conversations/{id}/messages:
+    post:
+      operationId: sendMessage
+      tags: [conversations]
+      summary: Send a message (streams SSE)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "200":
+          description: SSE stream of response chunks
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  # ─── Tasks ───────────────────────────────────────────────────────────────────
+  /tasks:
+    get:
+      operationId: listTasks
+      tags: [tasks]
+      summary: List all tasks
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, completed, failed, cancelled]
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Create a new task for ARIA
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Created task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}:
+    get:
+      operationId: getTask
+      tags: [tasks]
+      summary: Get a task by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+    patch:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Update a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdate"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+    delete:
+      operationId: deleteTask
+      tags: [tasks]
+      summary: Delete a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /tasks/summary:
+    get:
+      operationId: getTaskSummary
+      tags: [tasks]
+      summary: Get task counts grouped by status
+      responses:
+        "200":
+          description: Task summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskSummary"
+
+  # ─── Shell ───────────────────────────────────────────────────────────────────
+  /shell/sessions:
+    get:
+      operationId: listShellSessions
+      tags: [shell]
+      summary: List shell sessions
+      responses:
+        "200":
+          description: Shell sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShellSession"
+    post:
+      operationId: createShellSession
+      tags: [shell]
+      summary: Create a new shell session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShellSessionInput"
+      responses:
+        "201":
+          description: Created session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShellSession"
+
+  /shell/sessions/{id}:
+    get:
+      operationId: getShellSession
+      tags: [shell]
+      summary: Get shell session with command history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Shell session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShellSessionWithHistory"
+    delete:
+      operationId: deleteShellSession
+      tags: [shell]
+      summary: Close a shell session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /shell/sessions/{id}/execute:
+    post:
+      operationId: executeCommand
+      tags: [shell]
+      summary: Execute a command in a shell session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommandInput"
+      responses:
+        "200":
+          description: Command result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommandResult"
+
+  # ─── Integrations ─────────────────────────────────────────────────────────────
+  /integrations:
+    get:
+      operationId: listIntegrations
+      tags: [integrations]
+      summary: List all available integrations and their connection status
+      responses:
+        "200":
+          description: Integrations list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Integration"
+
+  /integrations/{id}:
+    get:
+      operationId: getIntegration
+      tags: [integrations]
+      summary: Get integration details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Integration details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Integration"
+    patch:
+      operationId: updateIntegration
+      tags: [integrations]
+      summary: Update integration settings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IntegrationUpdate"
+      responses:
+        "200":
+          description: Updated integration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Integration"
+
+  /integrations/{id}/connect:
+    post:
+      operationId: connectIntegration
+      tags: [integrations]
+      summary: Initiate OAuth connection for an integration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OAuth URL and connection info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthConnectResult"
+
+  /integrations/{id}/disconnect:
+    post:
+      operationId: disconnectIntegration
+      tags: [integrations]
+      summary: Disconnect an integration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated integration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Integration"
+
+  # ─── Memory ───────────────────────────────────────────────────────────────────
+  /memory:
+    get:
+      operationId: listMemory
+      tags: [memory]
+      summary: List all memory entries
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Memory entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MemoryEntry"
+    post:
+      operationId: createMemoryEntry
+      tags: [memory]
+      summary: Store a new memory entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemoryInput"
+      responses:
+        "201":
+          description: Created memory entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemoryEntry"
+
+  /memory/{id}:
+    patch:
+      operationId: updateMemoryEntry
+      tags: [memory]
+      summary: Update a memory entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemoryUpdate"
+      responses:
+        "200":
+          description: Updated memory entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemoryEntry"
+    delete:
+      operationId: deleteMemoryEntry
+      tags: [memory]
+      summary: Delete a memory entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Actions ──────────────────────────────────────────────────────────────────
+  /actions:
+    get:
+      operationId: listActions
+      tags: [actions]
+      summary: List recent actions taken by ARIA
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Action log
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Action"
+
+  /actions/feed:
+    get:
+      operationId: getActivityFeed
+      tags: [actions]
+      summary: Get recent activity feed grouped by day
+      responses:
+        "200":
+          description: Activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityDay"
+
+  # ─── Workflows ────────────────────────────────────────────────────────────────
+  /workflows:
+    get:
+      operationId: listWorkflows
+      tags: [workflows]
+      summary: List all automated workflows
+      responses:
+        "200":
+          description: Workflows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+    post:
+      operationId: createWorkflow
+      tags: [workflows]
+      summary: Create a new automated workflow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowInput"
+      responses:
+        "201":
+          description: Created workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+
+  /workflows/{id}:
+    get:
+      operationId: getWorkflow
+      tags: [workflows]
+      summary: Get a workflow by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Workflow details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+    patch:
+      operationId: updateWorkflow
+      tags: [workflows]
+      summary: Update a workflow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowUpdate"
+      responses:
+        "200":
+          description: Updated workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+    delete:
+      operationId: deleteWorkflow
+      tags: [workflows]
+      summary: Delete a workflow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /workflows/{id}/toggle:
+    post:
+      operationId: toggleWorkflow
+      tags: [workflows]
+      summary: Enable or disable a workflow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Toggled workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+
+  # ─── OpenAI chat (SSE) ────────────────────────────────────────────────────────
+  /openai/conversations/{id}/messages:
+    post:
+      operationId: sendOpenaiMessage
+      tags: [openai]
+      summary: Send a message and receive streamed AI response
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OpenaiMessageInput"
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    # ─── Agent ──────────────────────────────────────────────────────────────────
+    Agent:
+      type: object
+      properties:
+        id:          { type: integer }
+        name:        { type: string }
+        persona:     { type: string }
+        status:      { type: string, enum: [online, busy, idle, offline] }
+        avatarUrl:   { type: ["string", "null"] }
+        timezone:    { type: string }
+        language:    { type: string }
+        systemPrompt: { type: string }
+        createdAt:   { type: string }
+        updatedAt:   { type: string }
+      required: [id, name, status, createdAt, updatedAt]
+
+    AgentUpdate:
+      type: object
+      properties:
+        name:        { type: string }
+        persona:     { type: string }
+        status:      { type: string, enum: [online, busy, idle, offline] }
+        timezone:    { type: string }
+        language:    { type: string }
+        systemPrompt: { type: string }
+
+    AgentStats:
+      type: object
+      properties:
+        tasksCompleted:    { type: integer }
+        tasksInProgress:   { type: integer }
+        tasksFailed:       { type: integer }
+        messagesExchanged: { type: integer }
+        commandsExecuted:  { type: integer }
+        integrationsActive: { type: integer }
+        workflowsActive:   { type: integer }
+        memoryEntries:     { type: integer }
+        uptimeHours:       { type: integer }
+      required: [tasksCompleted, tasksInProgress, tasksFailed, messagesExchanged, commandsExecuted, integrationsActive, workflowsActive, memoryEntries, uptimeHours]
+
+    # ─── Conversations ───────────────────────────────────────────────────────────
+    Conversation:
+      type: object
+      properties:
+        id:          { type: integer }
+        title:       { type: string }
+        summary:     { type: ["string", "null"] }
+        messageCount: { type: integer }
+        createdAt:   { type: string }
+        updatedAt:   { type: string }
+      required: [id, title, messageCount, createdAt, updatedAt]
+
+    ConversationInput:
+      type: object
+      properties:
+        title: { type: string }
+      required: [title]
+
+    Message:
+      type: object
+      properties:
+        id:             { type: integer }
+        conversationId: { type: integer }
+        role:           { type: string, enum: [user, assistant, system] }
+        content:        { type: string }
+        createdAt:      { type: string }
+      required: [id, conversationId, role, content, createdAt]
+
+    ConversationWithMessages:
+      type: object
+      properties:
+        id:          { type: integer }
+        title:       { type: string }
+        summary:     { type: ["string", "null"] }
+        messageCount: { type: integer }
+        messages:    { type: array, items: { $ref: "#/components/schemas/Message" } }
+        createdAt:   { type: string }
+        updatedAt:   { type: string }
+      required: [id, title, messageCount, messages, createdAt, updatedAt]
+
+    MessageInput:
+      type: object
+      properties:
+        content: { type: string }
+      required: [content]
+
+    OpenaiMessageInput:
+      type: object
+      properties:
+        content: { type: string }
+      required: [content]
+
+    # ─── Tasks ──────────────────────────────────────────────────────────────────
+    Task:
+      type: object
+      properties:
+        id:          { type: integer }
+        title:       { type: string }
+        description: { type: ["string", "null"] }
+        status:      { type: string, enum: [pending, in_progress, completed, failed, cancelled] }
+        priority:    { type: string, enum: [low, medium, high, urgent] }
+        dueAt:       { type: ["string", "null"] }
+        completedAt: { type: ["string", "null"] }
+        tags:        { type: ["string", "null"] }
+        result:      { type: ["string", "null"] }
+        createdAt:   { type: string }
+        updatedAt:   { type: string }
+      required: [id, title, status, priority, createdAt, updatedAt]
+
+    TaskInput:
+      type: object
+      properties:
+        title:       { type: string }
+        description: { type: string }
+        priority:    { type: string, enum: [low, medium, high, urgent] }
+        dueAt:       { type: string }
+        tags:        { type: string }
+      required: [title]
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:       { type: string }
+        description: { type: string }
+        status:      { type: string, enum: [pending, in_progress, completed, failed, cancelled] }
+        priority:    { type: string, enum: [low, medium, high, urgent] }
+        dueAt:       { type: string }
+        tags:        { type: string }
+        result:      { type: string }
+
+    TaskSummary:
+      type: object
+      properties:
+        pending:     { type: integer }
+        in_progress: { type: integer }
+        completed:   { type: integer }
+        failed:      { type: integer }
+        cancelled:   { type: integer }
+        total:       { type: integer }
+      required: [pending, in_progress, completed, failed, cancelled, total]
+
+    # ─── Shell ──────────────────────────────────────────────────────────────────
+    ShellSession:
+      type: object
+      properties:
+        id:          { type: integer }
+        name:        { type: string }
+        workingDir:  { type: string }
+        status:      { type: string, enum: [active, closed] }
+        commandCount: { type: integer }
+        createdAt:   { type: string }
+        updatedAt:   { type: string }
+      required: [id, name, workingDir, status, commandCount, createdAt, updatedAt]
+
+    ShellSessionInput:
+      type: object
+      properties:
+        name:       { type: string }
+        workingDir: { type: string }
+      required: [name]
+
+    ShellCommand:
+      type: object
+      properties:
+        id:        { type: integer }
+        sessionId: { type: integer }
+        command:   { type: string }
+        output:    { type: ["string", "null"] }
+        exitCode:  { type: ["integer", "null"] }
+        executedAt: { type: string }
+      required: [id, sessionId, command, executedAt]
+
+    ShellSessionWithHistory:
+      type: object
+      properties:
+        id:          { type: integer }
+        name:        { type: string }
+        workingDir:  { type: string }
+        status:      { type: string, enum: [active, closed] }
+        commandCount: { type: integer }
+        commands:    { type: array, items: { $ref: "#/components/schemas/ShellCommand" } }
+        createdAt:   { type: string }
+        updatedAt:   { type: string }
+      required: [id, name, workingDir, status, commandCount, commands, createdAt, updatedAt]
+
+    CommandInput:
+      type: object
+      properties:
+        command: { type: string }
+      required: [command]
+
+    CommandResult:
+      type: object
+      properties:
+        id:       { type: integer }
+        command:  { type: string }
+        output:   { type: string }
+        exitCode: { type: integer }
+        duration: { type: integer }
+      required: [id, command, output, exitCode, duration]
+
+    # ─── Integrations ────────────────────────────────────────────────────────────
+    Integration:
+      type: object
+      properties:
+        id:          { type: integer }
+        name:        { type: string }
+        slug:        { type: string }
+        description: { type: string }
+        category:    { type: string, enum: [productivity, communication, developer, finance, crm, storage, calendar] }
+        status:      { type: string, enum: [connected, disconnected, error, pending] }
+        iconUrl:     { type: ["string", "null"] }
+        scopes:      { type: ["string", "null"] }
+        connectedAt: { type: ["string", "null"] }
+        lastUsedAt:  { type: ["string", "null"] }
+        enabled:     { type: boolean }
+        createdAt:   { type: string }
+        updatedAt:   { type: string }
+      required: [id, name, slug, description, category, status, enabled, createdAt, updatedAt]
+
+    IntegrationUpdate:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        scopes:  { type: string }
+
+    OAuthConnectResult:
+      type: object
+      properties:
+        authUrl:       { type: string }
+        state:         { type: string }
+        integration:   { $ref: "#/components/schemas/Integration" }
+      required: [authUrl, state, integration]
+
+    # ─── Memory ──────────────────────────────────────────────────────────────────
+    MemoryEntry:
+      type: object
+      properties:
+        id:        { type: integer }
+        key:       { type: string }
+        value:     { type: string }
+        category:  { type: string }
+        pinned:    { type: boolean }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+      required: [id, key, value, category, pinned, createdAt, updatedAt]
+
+    MemoryInput:
+      type: object
+      properties:
+        key:      { type: string }
+        value:    { type: string }
+        category: { type: string }
+        pinned:   { type: boolean }
+      required: [key, value, category]
+
+    MemoryUpdate:
+      type: object
+      properties:
+        key:     { type: string }
+        value:   { type: string }
+        category: { type: string }
+        pinned:  { type: boolean }
+
+    # ─── Actions ─────────────────────────────────────────────────────────────────
+    Action:
+      type: object
+      properties:
+        id:          { type: integer }
+        type:        { type: string }
+        description: { type: string }
+        metadata:    { type: ["string", "null"] }
+        status:      { type: string, enum: [success, failure, pending] }
+        createdAt:   { type: string }
+      required: [id, type, description, status, createdAt]
+
+    ActivityDay:
+      type: object
+      properties:
+        date:    { type: string }
+        actions: { type: array, items: { $ref: "#/components/schemas/Action" } }
+      required: [date, actions]
+
+    # ─── Workflows ───────────────────────────────────────────────────────────────
+    Workflow:
+      type: object
+      properties:
+        id:          { type: integer }
+        name:        { type: string }
+        description: { type: ["string", "null"] }
+        trigger:     { type: string }
+        steps:       { type: string }
+        enabled:     { type: boolean }
+        lastRunAt:   { type: ["string", "null"] }
+        runCount:    { type: integer }
+        createdAt:   { type: string }
+        updatedAt:   { type: string }
+      required: [id, name, trigger, steps, enabled, runCount, createdAt, updatedAt]
+
+    WorkflowInput:
+      type: object
+      properties:
+        name:        { type: string }
+        description: { type: string }
+        trigger:     { type: string }
+        steps:       { type: string }
+      required: [name, trigger, steps]
+
+    WorkflowUpdate:
+      type: object
+      properties:
+        name:        { type: string }
+        description: { type: string }
+        trigger:     { type: string }
+        steps:       { type: string }
+        enabled:     { type: boolean }

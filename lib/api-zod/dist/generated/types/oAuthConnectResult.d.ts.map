@@ -1,0 +1,1 @@
+{"version":3,"file":"oAuthConnectResult.d.ts","sourceRoot":"","sources":["../../../src/generated/types/oAuthConnectResult.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,WAAW,EAAE,MAAM,eAAe,CAAC;AAEjD,MAAM,WAAW,kBAAkB;IACjC,OAAO,EAAE,MAAM,CAAC;IAChB,KAAK,EAAE,MAAM,CAAC;IACd,WAAW,EAAE,WAAW,CAAC;CAC1B"}

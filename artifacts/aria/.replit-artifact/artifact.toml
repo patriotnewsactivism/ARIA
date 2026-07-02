@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "ARIA — AI Coworker"
+version = "1.0.0"
+id = "artifacts/aria"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20839
+
+[services.development]
+run = "pnpm --filter @workspace/aria run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/aria", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/aria/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20839"
+BASE_PATH = "/"
