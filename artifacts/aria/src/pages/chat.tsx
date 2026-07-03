@@ -118,8 +118,9 @@ function ActiveChat({ id }: { id: number }) {
     setStreamingMessage("")
 
     try {
-      // Manual SSE fetch as per requirements
-      const res = await fetch(`/api/conversations/${id}/messages`, {
+      // Manual SSE fetch — hits the real streaming AI endpoint, respecting the configured API base URL
+      const apiBase = import.meta.env.VITE_API_BASE_URL || ""
+      const res = await fetch(`${apiBase}/api/openai/conversations/${id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: userMessage }),
