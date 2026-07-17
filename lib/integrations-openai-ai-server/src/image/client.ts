@@ -5,13 +5,28 @@ import { Buffer } from "node:buffer";
 const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
 const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
 
-if (!apiKey) {
-  throw new Error("OPENAI_API_KEY must be set.");
+let _client: OpenAI | null = null;
+
+function getClient(): OpenAI {
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY must be set.");
+  }
+  if (!_client) {
+    _client = new OpenAI({
+      apiKey,
+      ...(baseURL ? { baseURL } : {}),
+    });
+  }
+  return _client;
 }
 
-export const openai = new OpenAI({
-  apiKey,
-  ...(baseURL ? { baseURL } : {}),
+// Lazy proxy: does NOT throw at module load / import time.
+export const openai: OpenAI = new Proxy({} as OpenAI, {
+  get(_target, prop, receiver) {
+    const client = getClient();
+    const value = Reflect.get(client, prop, receiver);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
 });
 
 export async function generateImageBuffer(
