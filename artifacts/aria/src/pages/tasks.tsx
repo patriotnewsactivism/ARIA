@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useListTasks, useCreateTask, useUpdateTask, useDeleteTask, getListTasksQueryKey } from "@workspace/api-client-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { CheckCircle2, Clock, PlayCircle, Plus, Trash2, XCircle } from "lucide-react"
+import { CheckCircle2, Clock, PlayCircle, Plus, Trash2, XCircle, Network } from "lucide-react"
 
 export default function Tasks() {
   const queryClient = useQueryClient()
@@ -48,6 +48,64 @@ export default function Tasks() {
           </div>
         )}
       </div>
+
+      <ApexSwarmPanel />
+    </div>
+  )
+}
+
+// Read-only panel showing real tasks from Apex's live 13-agent swarm
+// (proxied server-side via /apex/tasks so the admin bearer token never
+// reaches the browser). First step of the Apex+ARIA merge surfacing real
+// swarm activity inside ARIA's UI.
+function ApexSwarmPanel() {
+  const [apexTasks, setApexTasks] = useState<any[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/apex/tasks?limit=20`)
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return
+        setApexTasks(Array.isArray(data?.tasks) ? data.tasks : [])
+      })
+      .catch(err => {
+        if (!cancelled) setError(err?.message || "Failed to load Apex tasks")
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  return (
+    <div className="border-t border-border pt-6 mt-2">
+      <div className="flex items-center gap-2 mb-4">
+        <Network className="w-4 h-4 text-primary" />
+        <h2 className="text-xl font-semibold tracking-tight">Apex Swarm Activity</h2>
+        <Badge variant="outline" className="text-xs">live, read-only</Badge>
+      </div>
+      {error ? (
+        <p className="text-sm text-destructive">{error}</p>
+      ) : apexTasks === null ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+        </div>
+      ) : apexTasks.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No active tasks in the Apex swarm right now.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {apexTasks.map((t: any) => (
+            <Card key={t.id} className="flex flex-col">
+              <CardHeader className="p-4 pb-2 space-y-0">
+                <div className="flex justify-between items-start">
+                  <Badge variant="outline" className="text-xs">{t.status}</Badge>
+                  {t.assignedAgentId && <Badge variant="outline" className="text-xs">{t.assignedAgentId}</Badge>}
+                </div>
+                <CardTitle className="text-sm mt-2 leading-tight line-clamp-2">{t.title || t.description || `Task ${t.id}`}</CardTitle>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
