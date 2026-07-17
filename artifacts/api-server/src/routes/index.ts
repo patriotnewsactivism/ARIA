@@ -9,6 +9,7 @@ import memoryRouter from "./memory";
 import actionsRouter from "./actions";
 import workflowsRouter from "./workflows";
 import openaiRouter from "./openai";
+import apexRouter from "./apex";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(memoryRouter);
 router.use(actionsRouter);
 router.use(workflowsRouter);
 router.use("/openai", openaiRouter);
+router.use(apexRouter);
 
 export default router;
