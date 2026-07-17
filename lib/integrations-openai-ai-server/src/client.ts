@@ -1,32 +1,75 @@
 import OpenAI from "openai";
 
-const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
-const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL; // optional, omit for direct OpenAI
+// ─── Multi-Provider Fallback Client for ARIA's chat ───────────────────────────
+//
+// ARIA previously hard-required OPENAI_API_KEY (crashed on boot if unset).
+// This mirrors the Apex pattern (packages/core/src/llm-client.ts): try
+// OpenAI first (native gpt-4.1, best quality), then fall back through free
+// providers in order if OpenAI is unavailable, unset, or errors/rate-limits.
+// Config-driven — add a new provider by adding one array entry.
+//
+// Only the streaming chat.completions.create() call site is used by ARIA
+// (artifacts/api-server/src/routes/openai.ts), so this proxy only needs to
+// support that shape. Fallback happens at request-creation time (before the
+// stream starts) — once a provider's stream begins, we commit to it.
 
-let _client: OpenAI | null = null;
+const PROVIDERS: Array<{
+  name: string;
+  baseURL?: string; // omit for native OpenAI
+  apiKeyEnv: string;
+  fallbackModel?: string; // remap model id for providers that don't support gpt-4.1
+}> = [
+  { name: "openai", apiKeyEnv: "OPENAI_API_KEY" },
+  { name: "openrouter", baseURL: "https://openrouter.ai/api/v1", apiKeyEnv: "OPENROUTER_API_KEY", fallbackModel: "openai/gpt-4.1" },
+  { name: "cerebras", baseURL: "https://api.cerebras.ai/v1", apiKeyEnv: "CEREBRAS_API_KEY", fallbackModel: "gpt-oss-120b" },
+  { name: "mistral", baseURL: "https://api.mistral.ai/v1", apiKeyEnv: "MISTRAL_API_KEY", fallbackModel: "mistral-small-latest" },
+  { name: "groq", baseURL: "https://api.groq.com/openai/v1", apiKeyEnv: "GROQ_API_KEY", fallbackModel: "llama-3.3-70b-versatile" },
+  { name: "cohere-trial", baseURL: "https://api.cohere.com/compatibility/v1", apiKeyEnv: "COHERE_TRIAL_API_KEY", fallbackModel: "command-r-plus-08-2024" },
+  { name: "cohere", baseURL: "https://api.cohere.com/compatibility/v1", apiKeyEnv: "COHERE_API_KEY", fallbackModel: "command-r-plus-08-2024" },
+  { name: "openrouter-free", baseURL: "https://openrouter.ai/api/v1", apiKeyEnv: "OPENROUTER_API_KEY", fallbackModel: "poolside/laguna-m.1:free" },
+];
 
-function getClient(): OpenAI {
-  if (!apiKey) {
-    throw new Error(
-      "OPENAI_API_KEY must be set.",
+const clientCache = new Map<string, OpenAI>();
+
+function clientFor(provider: (typeof PROVIDERS)[number]): OpenAI | null {
+  const apiKey = process.env[provider.apiKeyEnv];
+  if (!apiKey) return null;
+  const cacheKey = provider.name;
+  if (!clientCache.has(cacheKey)) {
+    clientCache.set(
+      cacheKey,
+      new OpenAI({ apiKey, ...(provider.baseURL ? { baseURL: provider.baseURL } : {}) })
     );
   }
-  if (!_client) {
-    _client = new OpenAI({
-      apiKey,
-      ...(baseURL ? { baseURL } : {}),
-    });
-  }
-  return _client;
+  return clientCache.get(cacheKey)!;
 }
 
-// Lazy proxy: does NOT throw at module load / import time (which was crashing
-// the whole api-server on boot even for requests that never touch OpenAI).
-// Only throws when an OpenAI call is actually attempted without a key set.
-export const openai: OpenAI = new Proxy({} as OpenAI, {
-  get(_target, prop, receiver) {
-    const client = getClient();
-    const value = Reflect.get(client, prop, receiver);
-    return typeof value === "function" ? value.bind(client) : value;
+async function createWithFallback(params: any) {
+  let lastError: unknown = null;
+  for (const provider of PROVIDERS) {
+    const client = clientFor(provider);
+    if (!client) continue; // no key set for this provider, skip silently
+    try {
+      const model = provider.fallbackModel ?? params.model;
+      // eslint-disable-next-line no-console
+      console.log(`[llm-fallback] trying provider=${provider.name} model=${model}`);
+      return await client.chat.completions.create({ ...params, model });
+    } catch (err) {
+      lastError = err;
+      // eslint-disable-next-line no-console
+      console.error(`[llm-fallback] provider=${provider.name} failed:`, err instanceof Error ? err.message : err);
+      continue;
+    }
+  }
+  throw lastError ?? new Error("No LLM provider available — set at least one of: " + PROVIDERS.map((p) => p.apiKeyEnv).join(", "));
+}
+
+// Drop-in replacement for the old `openai` export — same call shape
+// (`openai.chat.completions.create(...)`), now with automatic fallback.
+export const openai = {
+  chat: {
+    completions: {
+      create: createWithFallback,
+    },
   },
-});
+} as unknown as OpenAI;
