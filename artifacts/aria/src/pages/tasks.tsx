@@ -61,27 +61,41 @@ export default function Tasks() {
 // for now (the autonomy dial itself is PATCH-able server-side already,
 // UI control comes in a later pass).
 function ApexProjectsPanel() {
-  const [projects, setProjects] = useState<any[] | null>(null)
+  // Each entry is the status() rollup shape: { project, health, goals, tasks, agentsInvolved, lastActivityAt }
+  const [rollups, setRollups] = useState<any[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/apex/projects`)
+    fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/apex/projects/status`)
       .then(r => r.json())
       .then(data => {
         if (cancelled) return
-        setProjects(Array.isArray(data?.projects) ? data.projects : [])
+        setRollups(Array.isArray(data?.projects) ? data.projects : [])
       })
       .catch(err => {
-        if (!cancelled) setError(err?.message || "Failed to load Apex projects")
+        if (!cancelled) setError(err?.message || "Failed to load Apex project status")
       })
     return () => { cancelled = true }
   }, [])
 
   const priorityRank: Record<string, number> = { critical: 0, high: 1, normal: 2, low: 3 }
-  const sorted = projects
-    ? [...projects].sort((a, b) => (priorityRank[a.priority] ?? 9) - (priorityRank[b.priority] ?? 9))
+  const sorted = rollups
+    ? [...rollups].sort((a, b) => (priorityRank[a.project.priority] ?? 9) - (priorityRank[b.project.priority] ?? 9))
     : null
+
+  const healthColors: Record<string, string> = {
+    healthy: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/40",
+    attention_needed: "bg-destructive/20 text-destructive border-destructive/50",
+    stalled: "bg-primary/20 text-primary border-primary/50",
+    unmanaged: "bg-muted text-muted-foreground border-border",
+  }
+  const healthLabels: Record<string, string> = {
+    healthy: "Healthy",
+    attention_needed: "Attention Needed",
+    stalled: "Stalled",
+    unmanaged: "Unmanaged",
+  }
 
   const priorityColors: Record<string, string> = {
     critical: "bg-destructive/20 text-destructive border-destructive/50",
@@ -115,26 +129,37 @@ function ApexProjectsPanel() {
         <p className="text-sm text-muted-foreground">No projects registered in Apex yet.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {sorted.map((p: any) => (
-            <Card key={p.id} className="flex flex-col">
-              <CardHeader className="p-4 pb-2 space-y-0">
-                <div className="flex justify-between items-start gap-2">
-                  <Badge className={(priorityColors[p.priority] || priorityColors.normal) + " border shadow-none text-xs uppercase"}>
-                    {p.priority}
+          {sorted.map((r: any) => {
+            const p = r.project
+            return (
+              <Card key={p.id} className="flex flex-col">
+                <CardHeader className="p-4 pb-2 space-y-0">
+                  <div className="flex justify-between items-start gap-2">
+                    <Badge className={(priorityColors[p.priority] || priorityColors.normal) + " border shadow-none text-xs uppercase"}>
+                      {p.priority}
+                    </Badge>
+                    {p.autonomyLevel === "full_autonomous" && <ShieldAlert className="w-4 h-4 text-primary shrink-0" />}
+                  </div>
+                  <CardTitle className="text-base mt-2 leading-tight line-clamp-1">{p.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0 flex-1 flex flex-col">
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{p.purpose}</p>
+                  <Badge className={(healthColors[r.health] || healthColors.unmanaged) + " border shadow-none text-xs w-fit mb-3"}>
+                    {healthLabels[r.health] || r.health}
                   </Badge>
-                  {p.autonomyLevel === "full_autonomous" && <ShieldAlert className="w-4 h-4 text-primary shrink-0" />}
-                </div>
-                <CardTitle className="text-base mt-2 leading-tight line-clamp-1">{p.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-0 flex-1 flex flex-col">
-                <p className="text-xs text-muted-foreground line-clamp-2 mb-3 flex-1">{p.purpose}</p>
-                <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
-                  <span className="text-xs text-muted-foreground">{autonomyLabels[p.autonomyLevel] || p.autonomyLevel}</span>
-                  <Badge variant="outline" className="text-xs">{p.status}</Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                    <span>{r.goals?.total ?? 0} goals</span>
+                    <span>{r.tasks?.total ?? 0} tasks</span>
+                    <span>{r.agentsInvolved?.length ?? 0} agents</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
+                    <span className="text-xs text-muted-foreground">{autonomyLabels[p.autonomyLevel] || p.autonomyLevel}</span>
+                    <Badge variant="outline" className="text-xs">{p.status}</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>

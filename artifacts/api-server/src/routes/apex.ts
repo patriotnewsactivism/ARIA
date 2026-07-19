@@ -73,6 +73,20 @@ router.get("/apex/projects", async (req, res) => {
   }
 });
 
+// GET /apex/projects/status — bulk status() rollup for every project
+// (goal/task counts by status, health flag, agentsInvolved, lastActivityAt).
+// Registered BEFORE /apex/projects/:id so "status" isn't swallowed as an :id.
+router.get("/apex/projects/status", async (req, res) => {
+  try {
+    const r = await fetch(`${apexBase()}/api/projects/status`, { headers: apexHeaders() });
+    const body = await r.json();
+    res.status(r.status).json(body);
+  } catch (err) {
+    req.log.error({ err }, "Failed to proxy Apex projects status");
+    res.status(502).json({ error: "Failed to reach Apex" });
+  }
+});
+
 // GET /apex/projects/:id — single project + its goals
 router.get("/apex/projects/:id", async (req, res) => {
   try {
