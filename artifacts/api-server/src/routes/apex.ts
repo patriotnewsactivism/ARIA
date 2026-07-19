@@ -60,6 +60,31 @@ router.post("/apex/goals", async (req, res) => {
   }
 });
 
+// GET /apex/projects — list the Apex project registry (health-card data for
+// the Command Center view: name, priority, autonomy level per project)
+router.get("/apex/projects", async (req, res) => {
+  try {
+    const r = await fetch(`${apexBase()}/api/projects`, { headers: apexHeaders() });
+    const body = await r.json();
+    res.status(r.status).json(body);
+  } catch (err) {
+    req.log.error({ err }, "Failed to proxy Apex projects");
+    res.status(502).json({ error: "Failed to reach Apex" });
+  }
+});
+
+// GET /apex/projects/:id — single project + its goals
+router.get("/apex/projects/:id", async (req, res) => {
+  try {
+    const r = await fetch(`${apexBase()}/api/projects/${req.params.id}`, { headers: apexHeaders() });
+    const body = await r.json();
+    res.status(r.status).json(body);
+  } catch (err) {
+    req.log.error({ err }, "Failed to proxy Apex project detail");
+    res.status(502).json({ error: "Failed to reach Apex" });
+  }
+});
+
 // PATCH /apex/tasks/:id — update a real Apex task's status/priority
 router.patch("/apex/tasks/:id", async (req, res) => {
   try {

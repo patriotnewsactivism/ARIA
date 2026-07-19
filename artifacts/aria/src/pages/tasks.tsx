@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { CheckCircle2, Clock, PlayCircle, Plus, Trash2, XCircle, Network } from "lucide-react"
+import { CheckCircle2, Clock, PlayCircle, Plus, Trash2, XCircle, Network, LayoutGrid, ShieldAlert } from "lucide-react"
 
 export default function Tasks() {
   const queryClient = useQueryClient()
@@ -49,7 +49,94 @@ export default function Tasks() {
         )}
       </div>
 
+      <ApexProjectsPanel />
       <ApexSwarmPanel />
+    </div>
+  )
+}
+
+// Command Center: live health cards for every project in Apex's registry
+// (proxied via /apex/projects). First visible piece of the mission-control
+// vision -- per-project priority + autonomy level, at a glance, read-only
+// for now (the autonomy dial itself is PATCH-able server-side already,
+// UI control comes in a later pass).
+function ApexProjectsPanel() {
+  const [projects, setProjects] = useState<any[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/apex/projects`)
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return
+        setProjects(Array.isArray(data?.projects) ? data.projects : [])
+      })
+      .catch(err => {
+        if (!cancelled) setError(err?.message || "Failed to load Apex projects")
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  const priorityRank: Record<string, number> = { critical: 0, high: 1, normal: 2, low: 3 }
+  const sorted = projects
+    ? [...projects].sort((a, b) => (priorityRank[a.priority] ?? 9) - (priorityRank[b.priority] ?? 9))
+    : null
+
+  const priorityColors: Record<string, string> = {
+    critical: "bg-destructive/20 text-destructive border-destructive/50",
+    high: "bg-primary/20 text-primary border-primary/50",
+    normal: "bg-muted text-muted-foreground border-border",
+    low: "bg-muted text-muted-foreground border-border",
+  }
+
+  const autonomyLabels: Record<string, string> = {
+    manual: "Manual",
+    assisted: "Assisted",
+    supervisor: "Supervisor",
+    full_autonomous: "Full Autonomous",
+    experimental: "Experimental",
+  }
+
+  return (
+    <div className="border-t border-border pt-6 mt-2">
+      <div className="flex items-center gap-2 mb-4">
+        <LayoutGrid className="w-4 h-4 text-primary" />
+        <h2 className="text-xl font-semibold tracking-tight">Project Registry</h2>
+        <Badge variant="outline" className="text-xs">live, read-only</Badge>
+      </div>
+      {error ? (
+        <p className="text-sm text-destructive">{error}</p>
+      ) : sorted === null ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+        </div>
+      ) : sorted.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No projects registered in Apex yet.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {sorted.map((p: any) => (
+            <Card key={p.id} className="flex flex-col">
+              <CardHeader className="p-4 pb-2 space-y-0">
+                <div className="flex justify-between items-start gap-2">
+                  <Badge className={(priorityColors[p.priority] || priorityColors.normal) + " border shadow-none text-xs uppercase"}>
+                    {p.priority}
+                  </Badge>
+                  {p.autonomyLevel === "full_autonomous" && <ShieldAlert className="w-4 h-4 text-primary shrink-0" />}
+                </div>
+                <CardTitle className="text-base mt-2 leading-tight line-clamp-1">{p.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0 flex-1 flex flex-col">
+                <p className="text-xs text-muted-foreground line-clamp-2 mb-3 flex-1">{p.purpose}</p>
+                <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
+                  <span className="text-xs text-muted-foreground">{autonomyLabels[p.autonomyLevel] || p.autonomyLevel}</span>
+                  <Badge variant="outline" className="text-xs">{p.status}</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
