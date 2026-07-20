@@ -369,6 +369,12 @@ export const OAUTH_PROVIDERS: Record<string, OAuthProviderConfig> = {
     clientSecretEnv: "BASECAMP_OAUTH_CLIENT_SECRET",
     extraAuthorizeParams: { type: "web_server" },
   },
+  "wordpress": {
+    authorizeUrl: "https://public-api.wordpress.com/oauth2/authorize",
+    tokenUrl: "https://public-api.wordpress.com/oauth2/token",
+    clientIdEnv: "WORDPRESS_OAUTH_CLIENT_ID",
+    clientSecretEnv: "WORDPRESS_OAUTH_CLIENT_SECRET",
+  },
 };
 
 export function getRedirectUri(): string {
