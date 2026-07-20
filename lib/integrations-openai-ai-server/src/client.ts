@@ -27,6 +27,12 @@ const PROVIDERS: Array<{
   // the free-tier Llama/Mistral models further down this chain. Live-verified
   // 2026-07-20 against the real endpoint before wiring in.
   { name: "github-models", baseURL: "https://models.github.ai/inference", apiKeyEnv: "GITHUB_TOKEN_4", fallbackModel: "openai/gpt-4.1" },
+  // Qwen Cloud (Alibaba Cloud Model Studio, international dashscope-intl
+  // endpoint -- NOT the mainland Bailian console, separate account/URL).
+  // PAID pay-as-you-go, NOT free -- kept after github-models (real gpt-4.1,
+  // highest quality free-ish tier) but before the remaining free tiers below
+  // since it's cheap and has no shared-quota risk. Live-verified 2026-07-20.
+  { name: "qwen-cloud", baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1", apiKeyEnv: "QWENCLOUD_API_KEY", fallbackModel: "qwen3-coder-plus" },
   { name: "cerebras", baseURL: "https://api.cerebras.ai/v1", apiKeyEnv: "CEREBRAS_API_KEY", fallbackModel: "gpt-oss-120b" },
   { name: "mistral", baseURL: "https://api.mistral.ai/v1", apiKeyEnv: "MISTRAL_API_KEY", fallbackModel: "mistral-small-latest" },
   { name: "groq", baseURL: "https://api.groq.com/openai/v1", apiKeyEnv: "GROQ_API_KEY", fallbackModel: "llama-3.3-70b-versatile" },
