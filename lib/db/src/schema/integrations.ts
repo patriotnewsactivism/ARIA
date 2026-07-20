@@ -14,6 +14,10 @@ export const integrationsTable = pgTable("integrations", {
   connectedAt: timestamp("connected_at"),
   lastUsedAt:  timestamp("last_used_at"),
   enabled:     boolean("enabled").notNull().default(false),
+  accessToken:    text("access_token"),
+  refreshToken:   text("refresh_token"),
+  tokenExpiresAt: timestamp("token_expires_at"),
+  lastError:      text("last_error"),
   createdAt:   timestamp("created_at").notNull().defaultNow(),
   updatedAt:   timestamp("updated_at").notNull().defaultNow(),
 });
