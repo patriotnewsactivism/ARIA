@@ -21,6 +21,12 @@ const PROVIDERS: Array<{
 }> = [
   { name: "openai", apiKeyEnv: "OPENAI_API_KEY" },
   { name: "openrouter", baseURL: "https://openrouter.ai/api/v1", apiKeyEnv: "OPENROUTER_API_KEY", fallbackModel: "openai/gpt-4.1" },
+  // GitHub Models -- free via the existing GITHUB_TOKEN_4 PAT (used elsewhere
+  // in this ecosystem for repo writes), no separate signup. Actually serves
+  // real gpt-4.1 (same model family as the native OpenAI tier above), unlike
+  // the free-tier Llama/Mistral models further down this chain. Live-verified
+  // 2026-07-20 against the real endpoint before wiring in.
+  { name: "github-models", baseURL: "https://models.github.ai/inference", apiKeyEnv: "GITHUB_TOKEN_4", fallbackModel: "openai/gpt-4.1" },
   { name: "cerebras", baseURL: "https://api.cerebras.ai/v1", apiKeyEnv: "CEREBRAS_API_KEY", fallbackModel: "gpt-oss-120b" },
   { name: "mistral", baseURL: "https://api.mistral.ai/v1", apiKeyEnv: "MISTRAL_API_KEY", fallbackModel: "mistral-small-latest" },
   { name: "groq", baseURL: "https://api.groq.com/openai/v1", apiKeyEnv: "GROQ_API_KEY", fallbackModel: "llama-3.3-70b-versatile" },
