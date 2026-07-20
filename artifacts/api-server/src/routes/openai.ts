@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { conversationsTable, messagesTable, agentTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { conversationsTable, messagesTable, agentTable, memoryTable, actionsTable } from "@workspace/db";
+import { eq, desc } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 
 const router = Router();
@@ -31,9 +31,31 @@ router.post("/conversations/:id/messages", async (req, res) => {
     // Save user message
     await db.insert(messagesTable).values({ conversationId: id, role: "user", content });
 
+    // Pull persistent memory (pinned facts first, then most recent) so ARIA
+    // actually recalls things across conversations instead of starting cold
+    // every time. `memoryTable` previously had CRUD routes but was never read
+    // anywhere — this is the wiring that makes it a real capability.
+    const memories = await db
+      .select()
+      .from(memoryTable)
+      .orderBy(desc(memoryTable.pinned), desc(memoryTable.updatedAt))
+      .limit(30);
+
+    let systemPrompt = agent.systemPrompt;
+    if (memories.length > 0) {
+      const byCategory: Record<string, string[]> = {};
+      for (const m of memories) {
+        (byCategory[m.category] ??= []).push(`- ${m.key}: ${m.value}`);
+      }
+      const memoryBlock = Object.entries(byCategory)
+        .map(([cat, lines]) => `[${cat}]\n${lines.join("\n")}`)
+        .join("\n\n");
+      systemPrompt = `${agent.systemPrompt}\n\n--- Things you remember (persistent memory, use naturally, don't just recite) ---\n${memoryBlock}`;
+    }
+
     // Build messages for OpenAI
     const chatMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
-      { role: "system", content: agent.systemPrompt },
+      { role: "system", content: systemPrompt },
       ...history.map((m) => ({ role: m.role as "user" | "assistant" | "system", content: m.content })),
       { role: "user", content },
     ];
@@ -62,6 +84,17 @@ router.post("/conversations/:id/messages", async (req, res) => {
 
     // Save assistant response
     await db.insert(messagesTable).values({ conversationId: id, role: "assistant", content: fullResponse });
+
+    // Record to the activity feed so chat interactions show up alongside
+    // other agent actions (tasks/shell/workflows) instead of being invisible.
+    await db.insert(actionsTable).values({
+      type: "chat_reply",
+      description: content.length > 80 ? `${content.slice(0, 80)}...` : content,
+      metadata: JSON.stringify({ conversationId: id }),
+      status: "success",
+    }).catch((err) => {
+      req.log.warn({ err }, "Failed to record chat action to feed (non-fatal)");
+    });
 
     // Update conversation stats
     const msgCount = history.length + 2;
