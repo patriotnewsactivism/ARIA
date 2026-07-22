@@ -10,12 +10,13 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { CheckCircle2, Clock, PlayCircle, Plus, Trash2, XCircle, Network, LayoutGrid, ShieldAlert } from "lucide-react"
+import { CheckCircle2, Clock, PlayCircle, Plus, Trash2, XCircle, Network, LayoutGrid, ShieldAlert, Rocket } from "lucide-react"
 
 export default function Tasks() {
   const queryClient = useQueryClient()
   const { data: tasks, isLoading } = useListTasks()
   const [filter, setFilter] = useState<string>("all")
+  const [swarmRefreshKey, setSwarmRefreshKey] = useState(0)
 
   const filteredTasks = tasks?.filter(t => filter === "all" || t.status === filter) || []
 
@@ -26,7 +27,10 @@ export default function Tasks() {
           <h1 className="text-3xl font-bold tracking-tight">Task Board</h1>
           <p className="text-muted-foreground mt-1">Manage ARIA's task queue and monitor progress.</p>
         </div>
-        <CreateTaskDialog />
+        <div className="flex items-center gap-2">
+          <DispatchToApexDialog onDispatched={() => setSwarmRefreshKey(k => k + 1)} />
+          <CreateTaskDialog />
+        </div>
       </div>
 
       <div className="flex items-center gap-2 pb-2 overflow-x-auto border-b border-border">
@@ -50,7 +54,7 @@ export default function Tasks() {
       </div>
 
       <ApexProjectsPanel />
-      <ApexSwarmPanel />
+      <ApexSwarmPanel refreshKey={swarmRefreshKey} />
     </div>
   )
 }
@@ -170,7 +174,7 @@ function ApexProjectsPanel() {
 // (proxied server-side via /apex/tasks so the admin bearer token never
 // reaches the browser). First step of the Apex+ARIA merge surfacing real
 // swarm activity inside ARIA's UI.
-function ApexSwarmPanel() {
+function ApexSwarmPanel({ refreshKey }: { refreshKey: number }) {
   const [apexTasks, setApexTasks] = useState<any[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -186,14 +190,14 @@ function ApexSwarmPanel() {
         if (!cancelled) setError(err?.message || "Failed to load Apex tasks")
       })
     return () => { cancelled = true }
-  }, [])
+  }, [refreshKey])
 
   return (
     <div className="border-t border-border pt-6 mt-2">
       <div className="flex items-center gap-2 mb-4">
         <Network className="w-4 h-4 text-primary" />
         <h2 className="text-xl font-semibold tracking-tight">Apex Swarm Activity</h2>
-        <Badge variant="outline" className="text-xs">live, read-only</Badge>
+        <Badge variant="outline" className="text-xs">live</Badge>
       </div>
       {error ? (
         <p className="text-sm text-destructive">{error}</p>
@@ -377,6 +381,105 @@ function CreateTaskDialog() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button type="submit" disabled={!title.trim() || createMutation.isPending}>
               Create Task
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Dispatch a goal directly into Apex's real 13-agent swarm -- the write-path
+// counterpart to ApexSwarmPanel's read-only view. Goes through the
+// server-side /apex/goals proxy (POST) so the admin bearer token never
+// reaches the browser; Apex's own CEO agent receives it, decomposes it into
+// initiatives, and delegates to CTO/COO exactly as if submitted directly to
+// Apex's own API. This closes the "Don has to manually route between ARIA
+// and Apex" gap -- one place to hand off work, swarm executes hands-off.
+function DispatchToApexDialog({ onDispatched }: { onDispatched: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [priority, setPriority] = useState("5")
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!title.trim() || !description.trim()) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/apex/goals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, description, priority: Number(priority) }),
+      })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body?.error || `Apex rejected the goal (HTTP ${res.status})`)
+      setOpen(false)
+      setTitle("")
+      setDescription("")
+      setPriority("5")
+      onDispatched()
+    } catch (err: any) {
+      setError(err?.message || "Failed to reach Apex")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setError(null) }}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="gap-2">
+          <Rocket className="w-4 h-4" /> Dispatch to Apex Swarm
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Dispatch Goal to Apex Swarm</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Apex's CEO agent will receive this, break it into initiatives, and
+              delegate to its CTO/COO and specialist agents -- runs hands-off from here.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="apex-title">Goal Title</Label>
+              <Input id="apex-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Add rate limiting to the public API" autoFocus />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="apex-description">Description</Label>
+              <Textarea
+                id="apex-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Full context and requirements for the swarm..."
+                className="min-h-[100px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="apex-priority">Priority (1 = highest, 10 = lowest)</Label>
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 - Critical</SelectItem>
+                  <SelectItem value="3">3 - High</SelectItem>
+                  <SelectItem value="5">5 - Normal</SelectItem>
+                  <SelectItem value="8">8 - Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" disabled={!title.trim() || !description.trim() || submitting}>
+              {submitting ? "Dispatching..." : "Dispatch to Swarm"}
             </Button>
           </DialogFooter>
         </form>
