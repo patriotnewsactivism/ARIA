@@ -67,18 +67,78 @@ router.post("/conversations/:id/messages", async (req, res) => {
 
     let fullResponse = "";
 
-    const stream = await openai.chat.completions.create({
-      model: "gpt-4.1",
-      max_completion_tokens: 8192,
-      messages: chatMessages,
-      stream: true,
-    });
+    // Primary: OpenAI gpt-4.1. Falls back to OpenRouter's free tier
+    // (same day as Apex/codeforge-v2) if the primary call fails before
+    // any content streams -- e.g. rate limit or auth error -- so a
+    // single provider outage doesn't take chat down entirely. Uses
+    // plain fetch (no new npm dependency) since OpenRouter's
+    // chat/completions SSE shape is OpenAI-compatible.
+    let openaiStream;
+    try {
+      openaiStream = await openai.chat.completions.create({
+        model: "gpt-4.1",
+        max_completion_tokens: 8192,
+        messages: chatMessages,
+        stream: true,
+      });
+    } catch (primaryErr) {
+      req.log.warn({ err: primaryErr }, "Primary OpenAI call failed, falling back to OpenRouter free tier");
+      const orKey = process.env.OPENROUTER_API_KEY;
+      if (!orKey) throw primaryErr;
 
-    for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content;
-      if (delta) {
-        fullResponse += delta;
-        res.write(`data: ${JSON.stringify({ content: delta })}\n\n`);
+      const orRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${orKey}`,
+          "HTTP-Referer": "https://aria.donmatthews.live",
+          "X-Title": "ARIA",
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-oss-20b:free",
+          messages: chatMessages,
+          stream: true,
+          max_tokens: 8192,
+        }),
+      });
+      if (!orRes.ok || !orRes.body) throw primaryErr;
+
+      const reader = orRes.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data: ")) continue;
+          const payload = trimmed.slice(6);
+          if (payload === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(payload);
+            const delta = parsed.choices?.[0]?.delta?.content;
+            if (delta) {
+              fullResponse += delta;
+              res.write(`data: ${JSON.stringify({ content: delta })}\n\n`);
+            }
+          } catch {
+            // Ignore malformed SSE chunks (e.g. keep-alive comments)
+          }
+        }
+      }
+      openaiStream = null;
+    }
+
+    if (openaiStream) {
+      for await (const chunk of openaiStream) {
+        const delta = chunk.choices[0]?.delta?.content;
+        if (delta) {
+          fullResponse += delta;
+          res.write(`data: ${JSON.stringify({ content: delta })}\n\n`);
+        }
       }
     }
 

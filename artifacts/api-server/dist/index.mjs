@@ -20654,27 +20654,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module.exports = Router12;
+    module.exports = Router13;
     module.exports.Route = Route;
-    function Router12(options) {
-      if (!(this instanceof Router12)) {
-        return new Router12(options);
+    function Router13(options) {
+      if (!(this instanceof Router13)) {
+        return new Router13(options);
       }
       const opts = options || {};
-      function router12(req, res, next) {
-        router12.handle(req, res, next);
+      function router13(req, res, next) {
+        router13.handle(req, res, next);
       }
-      Object.setPrototypeOf(router12, this);
-      router12.caseSensitive = opts.caseSensitive;
-      router12.mergeParams = opts.mergeParams;
-      router12.params = {};
-      router12.strict = opts.strict;
-      router12.stack = [];
-      return router12;
+      Object.setPrototypeOf(router13, this);
+      router13.caseSensitive = opts.caseSensitive;
+      router13.mergeParams = opts.mergeParams;
+      router13.params = {};
+      router13.strict = opts.strict;
+      router13.stack = [];
+      return router13;
     }
-    Router12.prototype = function() {
+    Router13.prototype = function() {
     };
-    Router12.prototype.param = function param2(name2, fn) {
+    Router13.prototype.param = function param2(name2, fn) {
       if (!name2) {
         throw new TypeError("argument name is required");
       }
@@ -20694,7 +20694,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router12.prototype.handle = function handle(req, res, callback) {
+    Router13.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -20821,7 +20821,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router12.prototype.use = function use(handler) {
+    Router13.prototype.use = function use(handler) {
       let offset = 0;
       let path2 = "/";
       if (typeof handler !== "function") {
@@ -20854,7 +20854,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router12.prototype.route = function route(path2) {
+    Router13.prototype.route = function route(path2) {
       const route2 = new Route(path2);
       const layer = new Layer(path2, {
         sensitive: this.caseSensitive,
@@ -20869,7 +20869,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router12.prototype[method] = function(path2) {
+      Router13.prototype[method] = function(path2) {
         const route = this.route(path2);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -21052,13 +21052,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve = __require("node:path").resolve;
     var once = require_once();
-    var Router12 = require_router();
+    var Router13 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports = module.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router12 = null;
+      var router13 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -21067,13 +21067,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router12 === null) {
-            router12 = new Router12({
+          if (router13 === null) {
+            router13 = new Router13({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router12;
+          return router13;
         }
       });
     };
@@ -21144,15 +21144,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router12 = this.router;
+      var router13 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router12.use(path2, fn2);
+          return router13.use(path2, fn2);
         }
         debug(".use app under %s", path2);
         fn2.mountpath = path2;
         fn2.parent = this;
-        router12.use(path2, function mounted_app(req, res, next) {
+        router13.use(path2, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -23725,7 +23725,7 @@ var require_express = __commonJS({
     var EventEmitter = __require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router12 = require_router();
+    var Router13 = require_router();
     var req = require_request();
     var res = require_response();
     exports = module.exports = createApplication;
@@ -23747,8 +23747,8 @@ var require_express = __commonJS({
     exports.application = proto;
     exports.request = req;
     exports.response = res;
-    exports.Route = Router12.Route;
-    exports.Router = Router12;
+    exports.Route = Router13.Route;
+    exports.Router = Router13;
     exports.json = bodyParser.json;
     exports.raw = bodyParser.raw;
     exports.static = require_serve_static();
@@ -28144,7 +28144,7 @@ var require_pino = __commonJS({
     function pinoBundlerAbsolutePath(p) {
       try {
         const path2 = __require("path");
-        const outputDir = "/home/runner/workspace/artifacts/api-server/dist";
+        const outputDir = "/app/ARIA/artifacts/api-server/dist";
         return path2.resolve(outputDir, p.replace(/^\.\//, ""));
       } catch (e) {
         const f = new Function("p", "return new URL(p, import.meta.url).pathname");
@@ -54405,6 +54405,10 @@ var init_integrations = __esm({
       connectedAt: timestamp("connected_at"),
       lastUsedAt: timestamp("last_used_at"),
       enabled: boolean("enabled").notNull().default(false),
+      accessToken: text("access_token"),
+      refreshToken: text("refresh_token"),
+      tokenExpiresAt: timestamp("token_expires_at"),
+      lastError: text("last_error"),
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow()
     });
@@ -54559,12 +54563,12 @@ var init_src = __esm({
 });
 
 // src/app.ts
-var import_express12 = __toESM(require_express2(), 1);
+var import_express13 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_pino_http = __toESM(require_logger(), 1);
 
 // src/routes/index.ts
-var import_express11 = __toESM(require_express2(), 1);
+var import_express12 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_express = __toESM(require_express2(), 1);
@@ -59281,11 +59285,375 @@ var import_express6 = __toESM(require_express2(), 1);
 init_src();
 init_src();
 init_drizzle_orm();
+
+// src/lib/oauth-providers.ts
+var OAUTH_PROVIDERS = {
+  "github": {
+    authorizeUrl: "https://github.com/login/oauth/authorize",
+    tokenUrl: "https://github.com/login/oauth/access_token",
+    clientIdEnv: "GITHUB_OAUTH_CLIENT_ID",
+    clientSecretEnv: "GITHUB_OAUTH_CLIENT_SECRET"
+  },
+  "gitlab": {
+    authorizeUrl: "https://gitlab.com/oauth/authorize",
+    tokenUrl: "https://gitlab.com/oauth/token",
+    clientIdEnv: "GITLAB_OAUTH_CLIENT_ID",
+    clientSecretEnv: "GITLAB_OAUTH_CLIENT_SECRET"
+  },
+  "bitbucket": {
+    authorizeUrl: "https://bitbucket.org/site/oauth2/authorize",
+    tokenUrl: "https://bitbucket.org/site/oauth2/access_token",
+    clientIdEnv: "BITBUCKET_OAUTH_CLIENT_ID",
+    clientSecretEnv: "BITBUCKET_OAUTH_CLIENT_SECRET"
+  },
+  "slack": {
+    authorizeUrl: "https://slack.com/oauth/v2/authorize",
+    tokenUrl: "https://slack.com/api/oauth.v2.access",
+    clientIdEnv: "SLACK_OAUTH_CLIENT_ID",
+    clientSecretEnv: "SLACK_OAUTH_CLIENT_SECRET",
+    accessTokenKey: "access_token"
+  },
+  "discord": {
+    authorizeUrl: "https://discord.com/api/oauth2/authorize",
+    tokenUrl: "https://discord.com/api/oauth2/token",
+    clientIdEnv: "DISCORD_OAUTH_CLIENT_ID",
+    clientSecretEnv: "DISCORD_OAUTH_CLIENT_SECRET"
+  },
+  "google-calendar": {
+    authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: "https://oauth2.googleapis.com/token",
+    clientIdEnv: "GOOGLE_OAUTH_CLIENT_ID",
+    clientSecretEnv: "GOOGLE_OAUTH_CLIENT_SECRET",
+    extraAuthorizeParams: { access_type: "offline", prompt: "consent" }
+  },
+  "gmail": {
+    authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: "https://oauth2.googleapis.com/token",
+    clientIdEnv: "GOOGLE_OAUTH_CLIENT_ID",
+    clientSecretEnv: "GOOGLE_OAUTH_CLIENT_SECRET",
+    extraAuthorizeParams: { access_type: "offline", prompt: "consent" }
+  },
+  "google-drive": {
+    authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: "https://oauth2.googleapis.com/token",
+    clientIdEnv: "GOOGLE_OAUTH_CLIENT_ID",
+    clientSecretEnv: "GOOGLE_OAUTH_CLIENT_SECRET",
+    extraAuthorizeParams: { access_type: "offline", prompt: "consent" }
+  },
+  "google-photos": {
+    authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: "https://oauth2.googleapis.com/token",
+    clientIdEnv: "GOOGLE_OAUTH_CLIENT_ID",
+    clientSecretEnv: "GOOGLE_OAUTH_CLIENT_SECRET",
+    extraAuthorizeParams: { access_type: "offline", prompt: "consent" }
+  },
+  "microsoft-teams": {
+    authorizeUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+    tokenUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    clientIdEnv: "MICROSOFT_OAUTH_CLIENT_ID",
+    clientSecretEnv: "MICROSOFT_OAUTH_CLIENT_SECRET"
+  },
+  "outlook": {
+    authorizeUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+    tokenUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    clientIdEnv: "MICROSOFT_OAUTH_CLIENT_ID",
+    clientSecretEnv: "MICROSOFT_OAUTH_CLIENT_SECRET"
+  },
+  "outlook-calendar": {
+    authorizeUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+    tokenUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    clientIdEnv: "MICROSOFT_OAUTH_CLIENT_ID",
+    clientSecretEnv: "MICROSOFT_OAUTH_CLIENT_SECRET"
+  },
+  "onedrive": {
+    authorizeUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+    tokenUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    clientIdEnv: "MICROSOFT_OAUTH_CLIENT_ID",
+    clientSecretEnv: "MICROSOFT_OAUTH_CLIENT_SECRET"
+  },
+  "notion": {
+    authorizeUrl: "https://api.notion.com/v1/oauth/authorize",
+    tokenUrl: "https://api.notion.com/v1/oauth/token",
+    clientIdEnv: "NOTION_OAUTH_CLIENT_ID",
+    clientSecretEnv: "NOTION_OAUTH_CLIENT_SECRET",
+    tokenRequestStyle: "json"
+  },
+  "hubspot": {
+    authorizeUrl: "https://app.hubspot.com/oauth/authorize",
+    tokenUrl: "https://api.hubapi.com/oauth/v1/token",
+    clientIdEnv: "HUBSPOT_OAUTH_CLIENT_ID",
+    clientSecretEnv: "HUBSPOT_OAUTH_CLIENT_SECRET"
+  },
+  "salesforce": {
+    authorizeUrl: "https://login.salesforce.com/services/oauth2/authorize",
+    tokenUrl: "https://login.salesforce.com/services/oauth2/token",
+    clientIdEnv: "SALESFORCE_OAUTH_CLIENT_ID",
+    clientSecretEnv: "SALESFORCE_OAUTH_CLIENT_SECRET"
+  },
+  "dropbox": {
+    authorizeUrl: "https://www.dropbox.com/oauth2/authorize",
+    tokenUrl: "https://api.dropboxapi.com/oauth2/token",
+    clientIdEnv: "DROPBOX_OAUTH_CLIENT_ID",
+    clientSecretEnv: "DROPBOX_OAUTH_CLIENT_SECRET",
+    extraAuthorizeParams: { token_access_type: "offline" }
+  },
+  "box": {
+    authorizeUrl: "https://account.box.com/api/oauth2/authorize",
+    tokenUrl: "https://api.box.com/oauth2/token",
+    clientIdEnv: "BOX_OAUTH_CLIENT_ID",
+    clientSecretEnv: "BOX_OAUTH_CLIENT_SECRET"
+  },
+  "zoom": {
+    authorizeUrl: "https://zoom.us/oauth/authorize",
+    tokenUrl: "https://zoom.us/oauth/token",
+    clientIdEnv: "ZOOM_OAUTH_CLIENT_ID",
+    clientSecretEnv: "ZOOM_OAUTH_CLIENT_SECRET"
+  },
+  "linkedin": {
+    authorizeUrl: "https://www.linkedin.com/oauth/v2/authorization",
+    tokenUrl: "https://www.linkedin.com/oauth/v2/accessToken",
+    clientIdEnv: "LINKEDIN_OAUTH_CLIENT_ID",
+    clientSecretEnv: "LINKEDIN_OAUTH_CLIENT_SECRET"
+  },
+  "twitter-x": {
+    authorizeUrl: "https://twitter.com/i/oauth2/authorize",
+    tokenUrl: "https://api.twitter.com/2/oauth2/token",
+    clientIdEnv: "TWITTER_OAUTH_CLIENT_ID",
+    clientSecretEnv: "TWITTER_OAUTH_CLIENT_SECRET"
+  },
+  "asana": {
+    authorizeUrl: "https://app.asana.com/-/oauth_authorize",
+    tokenUrl: "https://app.asana.com/-/oauth_token",
+    clientIdEnv: "ASANA_OAUTH_CLIENT_ID",
+    clientSecretEnv: "ASANA_OAUTH_CLIENT_SECRET"
+  },
+  "monday": {
+    authorizeUrl: "https://auth.monday.com/oauth2/authorize",
+    tokenUrl: "https://auth.monday.com/oauth2/token",
+    clientIdEnv: "MONDAY_OAUTH_CLIENT_ID",
+    clientSecretEnv: "MONDAY_OAUTH_CLIENT_SECRET"
+  },
+  "pipedrive": {
+    authorizeUrl: "https://oauth.pipedrive.com/oauth/authorize",
+    tokenUrl: "https://oauth.pipedrive.com/oauth/token",
+    clientIdEnv: "PIPEDRIVE_OAUTH_CLIENT_ID",
+    clientSecretEnv: "PIPEDRIVE_OAUTH_CLIENT_SECRET"
+  },
+  "xero": {
+    authorizeUrl: "https://login.xero.com/identity/connect/authorize",
+    tokenUrl: "https://identity.xero.com/connect/token",
+    clientIdEnv: "XERO_OAUTH_CLIENT_ID",
+    clientSecretEnv: "XERO_OAUTH_CLIENT_SECRET"
+  },
+  "coinbase": {
+    authorizeUrl: "https://www.coinbase.com/oauth/authorize",
+    tokenUrl: "https://api.coinbase.com/oauth/token",
+    clientIdEnv: "COINBASE_OAUTH_CLIENT_ID",
+    clientSecretEnv: "COINBASE_OAUTH_CLIENT_SECRET"
+  },
+  "calendly": {
+    authorizeUrl: "https://auth.calendly.com/oauth/authorize",
+    tokenUrl: "https://auth.calendly.com/oauth/token",
+    clientIdEnv: "CALENDLY_OAUTH_CLIENT_ID",
+    clientSecretEnv: "CALENDLY_OAUTH_CLIENT_SECRET"
+  },
+  "intercom": {
+    authorizeUrl: "https://app.intercom.com/oauth",
+    tokenUrl: "https://api.intercom.io/auth/eagle/token",
+    clientIdEnv: "INTERCOM_OAUTH_CLIENT_ID",
+    clientSecretEnv: "INTERCOM_OAUTH_CLIENT_SECRET"
+  },
+  "quickbooks": {
+    authorizeUrl: "https://appcenter.intuit.com/connect/oauth2",
+    tokenUrl: "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
+    clientIdEnv: "QUICKBOOKS_OAUTH_CLIENT_ID",
+    clientSecretEnv: "QUICKBOOKS_OAUTH_CLIENT_SECRET"
+  },
+  "clickup": {
+    authorizeUrl: "https://app.clickup.com/api",
+    tokenUrl: "https://api.clickup.com/api/v2/oauth/token",
+    clientIdEnv: "CLICKUP_OAUTH_CLIENT_ID",
+    clientSecretEnv: "CLICKUP_OAUTH_CLIENT_SECRET"
+  },
+  "todoist": {
+    authorizeUrl: "https://todoist.com/oauth/authorize",
+    tokenUrl: "https://todoist.com/oauth/access_token",
+    clientIdEnv: "TODOIST_OAUTH_CLIENT_ID",
+    clientSecretEnv: "TODOIST_OAUTH_CLIENT_SECRET"
+  },
+  "figma": {
+    authorizeUrl: "https://www.figma.com/oauth",
+    tokenUrl: "https://www.figma.com/api/oauth/token",
+    clientIdEnv: "FIGMA_OAUTH_CLIENT_ID",
+    clientSecretEnv: "FIGMA_OAUTH_CLIENT_SECRET"
+  },
+  "confluence": {
+    authorizeUrl: "https://auth.atlassian.com/authorize",
+    tokenUrl: "https://auth.atlassian.com/oauth/token",
+    clientIdEnv: "ATLASSIAN_OAUTH_CLIENT_ID",
+    clientSecretEnv: "ATLASSIAN_OAUTH_CLIENT_SECRET",
+    tokenRequestStyle: "json",
+    extraAuthorizeParams: { audience: "api.atlassian.com", prompt: "consent" }
+  },
+  "docusign": {
+    authorizeUrl: "https://account.docusign.com/oauth/auth",
+    tokenUrl: "https://account.docusign.com/oauth/token",
+    clientIdEnv: "DOCUSIGN_OAUTH_CLIENT_ID",
+    clientSecretEnv: "DOCUSIGN_OAUTH_CLIENT_SECRET"
+  },
+  "miro": {
+    authorizeUrl: "https://miro.com/oauth/authorize",
+    tokenUrl: "https://api.miro.com/v1/oauth/token",
+    clientIdEnv: "MIRO_OAUTH_CLIENT_ID",
+    clientSecretEnv: "MIRO_OAUTH_CLIENT_SECRET"
+  },
+  "typeform": {
+    authorizeUrl: "https://api.typeform.com/oauth/authorize",
+    tokenUrl: "https://api.typeform.com/oauth/token",
+    clientIdEnv: "TYPEFORM_OAUTH_CLIENT_ID",
+    clientSecretEnv: "TYPEFORM_OAUTH_CLIENT_SECRET"
+  },
+  "netlify": {
+    authorizeUrl: "https://app.netlify.com/authorize",
+    tokenUrl: "https://api.netlify.com/oauth/token",
+    clientIdEnv: "NETLIFY_OAUTH_CLIENT_ID",
+    clientSecretEnv: "NETLIFY_OAUTH_CLIENT_SECRET"
+  },
+  "digitalocean": {
+    authorizeUrl: "https://cloud.digitalocean.com/v1/oauth/authorize",
+    tokenUrl: "https://cloud.digitalocean.com/v1/oauth/token",
+    clientIdEnv: "DIGITALOCEAN_OAUTH_CLIENT_ID",
+    clientSecretEnv: "DIGITALOCEAN_OAUTH_CLIENT_SECRET"
+  },
+  "sentry": {
+    authorizeUrl: "https://sentry.io/oauth/authorize/",
+    tokenUrl: "https://sentry.io/oauth/token/",
+    clientIdEnv: "SENTRY_OAUTH_CLIENT_ID",
+    clientSecretEnv: "SENTRY_OAUTH_CLIENT_SECRET"
+  },
+  "supabase": {
+    authorizeUrl: "https://api.supabase.com/v1/oauth/authorize",
+    tokenUrl: "https://api.supabase.com/v1/oauth/token",
+    clientIdEnv: "SUPABASE_OAUTH_CLIENT_ID",
+    clientSecretEnv: "SUPABASE_OAUTH_CLIENT_SECRET"
+  },
+  "pagerduty": {
+    authorizeUrl: "https://identity.pagerduty.com/oauth/authorize",
+    tokenUrl: "https://identity.pagerduty.com/oauth/token",
+    clientIdEnv: "PAGERDUTY_OAUTH_CLIENT_ID",
+    clientSecretEnv: "PAGERDUTY_OAUTH_CLIENT_SECRET"
+  },
+  "zoho-crm": {
+    authorizeUrl: "https://accounts.zoho.com/oauth/v2/auth",
+    tokenUrl: "https://accounts.zoho.com/oauth/v2/token",
+    clientIdEnv: "ZOHO_OAUTH_CLIENT_ID",
+    clientSecretEnv: "ZOHO_OAUTH_CLIENT_SECRET"
+  },
+  "keap": {
+    authorizeUrl: "https://accounts.infusionsoft.com/app/oauth/authorize",
+    tokenUrl: "https://api.infusionsoft.com/token",
+    clientIdEnv: "KEAP_OAUTH_CLIENT_ID",
+    clientSecretEnv: "KEAP_OAUTH_CLIENT_SECRET"
+  },
+  "square": {
+    authorizeUrl: "https://connect.squareup.com/oauth2/authorize",
+    tokenUrl: "https://connect.squareup.com/oauth2/token",
+    clientIdEnv: "SQUARE_OAUTH_CLIENT_ID",
+    clientSecretEnv: "SQUARE_OAUTH_CLIENT_SECRET",
+    tokenRequestStyle: "json"
+  },
+  "paypal": {
+    authorizeUrl: "https://www.paypal.com/connect",
+    tokenUrl: "https://api-m.paypal.com/v1/oauth2/token",
+    clientIdEnv: "PAYPAL_OAUTH_CLIENT_ID",
+    clientSecretEnv: "PAYPAL_OAUTH_CLIENT_SECRET"
+  },
+  "wave": {
+    authorizeUrl: "https://api.waveapps.com/oauth2/authorize/",
+    tokenUrl: "https://api.waveapps.com/oauth2/token/",
+    clientIdEnv: "WAVE_OAUTH_CLIENT_ID",
+    clientSecretEnv: "WAVE_OAUTH_CLIENT_SECRET"
+  },
+  "freshbooks": {
+    authorizeUrl: "https://auth.freshbooks.com/oauth/authorize",
+    tokenUrl: "https://api.freshbooks.com/auth/oauth/token",
+    clientIdEnv: "FRESHBOOKS_OAUTH_CLIENT_ID",
+    clientSecretEnv: "FRESHBOOKS_OAUTH_CLIENT_SECRET"
+  },
+  "acuity-scheduling": {
+    authorizeUrl: "https://acuityscheduling.com/oauth2/authorize",
+    tokenUrl: "https://acuityscheduling.com/oauth2/token",
+    clientIdEnv: "ACUITY_OAUTH_CLIENT_ID",
+    clientSecretEnv: "ACUITY_OAUTH_CLIENT_SECRET"
+  },
+  "ringcentral": {
+    authorizeUrl: "https://platform.ringcentral.com/restapi/oauth/authorize",
+    tokenUrl: "https://platform.ringcentral.com/restapi/oauth/token",
+    clientIdEnv: "RINGCENTRAL_OAUTH_CLIENT_ID",
+    clientSecretEnv: "RINGCENTRAL_OAUTH_CLIENT_SECRET"
+  },
+  "front": {
+    authorizeUrl: "https://app.frontapp.com/oauth/authorize",
+    tokenUrl: "https://app.frontapp.com/oauth/token",
+    clientIdEnv: "FRONT_OAUTH_CLIENT_ID",
+    clientSecretEnv: "FRONT_OAUTH_CLIENT_SECRET"
+  },
+  "mailchimp": {
+    authorizeUrl: "https://login.mailchimp.com/oauth2/authorize",
+    tokenUrl: "https://login.mailchimp.com/oauth2/token",
+    clientIdEnv: "MAILCHIMP_OAUTH_CLIENT_ID",
+    clientSecretEnv: "MAILCHIMP_OAUTH_CLIENT_SECRET"
+  },
+  "whatsapp-business": {
+    authorizeUrl: "https://www.facebook.com/v19.0/dialog/oauth",
+    tokenUrl: "https://graph.facebook.com/v19.0/oauth/access_token",
+    clientIdEnv: "META_OAUTH_CLIENT_ID",
+    clientSecretEnv: "META_OAUTH_CLIENT_SECRET"
+  },
+  "facebook-messenger": {
+    authorizeUrl: "https://www.facebook.com/v19.0/dialog/oauth",
+    tokenUrl: "https://graph.facebook.com/v19.0/oauth/access_token",
+    clientIdEnv: "META_OAUTH_CLIENT_ID",
+    clientSecretEnv: "META_OAUTH_CLIENT_SECRET"
+  },
+  "instagram": {
+    authorizeUrl: "https://api.instagram.com/oauth/authorize",
+    tokenUrl: "https://api.instagram.com/oauth/access_token",
+    clientIdEnv: "INSTAGRAM_OAUTH_CLIENT_ID",
+    clientSecretEnv: "INSTAGRAM_OAUTH_CLIENT_SECRET"
+  },
+  "onenote": {
+    authorizeUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+    tokenUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    clientIdEnv: "MICROSOFT_OAUTH_CLIENT_ID",
+    clientSecretEnv: "MICROSOFT_OAUTH_CLIENT_SECRET"
+  },
+  "basecamp": {
+    authorizeUrl: "https://launchpad.37signals.com/authorization/new",
+    tokenUrl: "https://launchpad.37signals.com/authorization/token",
+    clientIdEnv: "BASECAMP_OAUTH_CLIENT_ID",
+    clientSecretEnv: "BASECAMP_OAUTH_CLIENT_SECRET",
+    extraAuthorizeParams: { type: "web_server" }
+  },
+  "wordpress": {
+    authorizeUrl: "https://public-api.wordpress.com/oauth2/authorize",
+    tokenUrl: "https://public-api.wordpress.com/oauth2/token",
+    clientIdEnv: "WORDPRESS_OAUTH_CLIENT_ID",
+    clientSecretEnv: "WORDPRESS_OAUTH_CLIENT_SECRET"
+  }
+};
+function getRedirectUri() {
+  const base = process.env.OAUTH_REDIRECT_BASE_URL || (process.env.RAILWAY_SERVICE_API_SERVER_URL ? `https://${process.env.RAILWAY_SERVICE_API_SERVER_URL}` : null) || "https://api-server-production-90ef.up.railway.app";
+  return `${base}/api/integrations/oauth/callback`;
+}
+
+// src/routes/integrations.ts
 var router6 = (0, import_express6.Router)();
 router6.get("/integrations", async (req, res) => {
   try {
     const rows = await db.select().from(integrationsTable);
-    res.json(rows);
+    const safe = rows.map(({ accessToken, refreshToken, ...rest }) => rest);
+    res.json(safe);
   } catch (err) {
     req.log.error({ err }, "Failed to list integrations");
     res.status(500).json({ error: "Failed to list integrations" });
@@ -59296,7 +59664,8 @@ router6.get("/integrations/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     const [row] = await db.select().from(integrationsTable).where(eq(integrationsTable.id, id));
     if (!row) return res.status(404).json({ error: "Integration not found" });
-    res.json(row);
+    const { accessToken, refreshToken, ...safe } = row;
+    res.json(safe);
   } catch (err) {
     req.log.error({ err }, "Failed to get integration");
     res.status(500).json({ error: "Failed to get integration" });
@@ -59305,9 +59674,11 @@ router6.get("/integrations/:id", async (req, res) => {
 router6.patch("/integrations/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const [row] = await db.update(integrationsTable).set({ ...req.body, updatedAt: /* @__PURE__ */ new Date() }).where(eq(integrationsTable.id, id)).returning();
+    const { accessToken, refreshToken, tokenExpiresAt, ...body } = req.body ?? {};
+    const [row] = await db.update(integrationsTable).set({ ...body, updatedAt: /* @__PURE__ */ new Date() }).where(eq(integrationsTable.id, id)).returning();
     if (!row) return res.status(404).json({ error: "Integration not found" });
-    res.json(row);
+    const { accessToken: _a3, refreshToken: _r, ...safe } = row;
+    res.json(safe);
   } catch (err) {
     req.log.error({ err }, "Failed to update integration");
     res.status(500).json({ error: "Failed to update integration" });
@@ -59318,21 +59689,121 @@ router6.post("/integrations/:id/connect", async (req, res) => {
     const id = parseInt(req.params.id);
     const [integration] = await db.select().from(integrationsTable).where(eq(integrationsTable.id, id));
     if (!integration) return res.status(404).json({ error: "Integration not found" });
-    const state = Buffer.from(JSON.stringify({ integrationId: id, ts: Date.now() })).toString("base64");
-    const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=DEMO&redirect_uri=https://aria.app/oauth/callback&state=${state}&scope=${integration.scopes ?? ""}`;
-    const [updated] = await db.update(integrationsTable).set({ status: "pending", updatedAt: /* @__PURE__ */ new Date() }).where(eq(integrationsTable.id, id)).returning();
-    res.json({ authUrl, state, integration: updated });
+    const provider = OAUTH_PROVIDERS[integration.slug];
+    if (!provider) {
+      return res.status(400).json({
+        error: "not_supported",
+        message: `${integration.name} doesn't have OAuth wired up yet. This integration is cataloged but not yet connectable.`
+      });
+    }
+    const clientId = process.env[provider.clientIdEnv];
+    const clientSecret = process.env[provider.clientSecretEnv];
+    if (!clientId || !clientSecret) {
+      await db.update(integrationsTable).set({ status: "error", lastError: `Missing ${provider.clientIdEnv}/${provider.clientSecretEnv} in environment`, updatedAt: /* @__PURE__ */ new Date() }).where(eq(integrationsTable.id, id));
+      return res.status(400).json({
+        error: "not_configured",
+        message: `${integration.name} OAuth app credentials aren't set up yet. An admin needs to add ${provider.clientIdEnv} and ${provider.clientSecretEnv} to the environment before this can connect for real.`
+      });
+    }
+    const state = Buffer.from(JSON.stringify({ integrationId: id, ts: Date.now() })).toString("base64url");
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: getRedirectUri(),
+      state,
+      response_type: "code",
+      scope: integration.scopes ?? "",
+      ...provider.extraAuthorizeParams ?? {}
+    });
+    const authUrl = `${provider.authorizeUrl}?${params.toString()}`;
+    const [updated] = await db.update(integrationsTable).set({ status: "pending", lastError: null, updatedAt: /* @__PURE__ */ new Date() }).where(eq(integrationsTable.id, id)).returning();
+    const { accessToken, refreshToken, ...safe } = updated;
+    res.json({ authUrl, state, integration: safe });
   } catch (err) {
     req.log.error({ err }, "Failed to initiate OAuth");
     res.status(500).json({ error: "Failed to initiate OAuth" });
   }
 });
+router6.get("/integrations/oauth/callback", async (req, res) => {
+  const { code, state, error: oauthError } = req.query;
+  const frontendBase = process.env.ARIA_FRONTEND_URL || "https://aria.donmatthews.live";
+  if (oauthError) {
+    return res.redirect(`${frontendBase}/integrations?oauth_error=${encodeURIComponent(oauthError)}`);
+  }
+  if (!code || !state) {
+    return res.status(400).json({ error: "Missing code or state" });
+  }
+  let integrationId;
+  try {
+    const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf-8"));
+    integrationId = decoded.integrationId;
+  } catch {
+    return res.status(400).json({ error: "Invalid state" });
+  }
+  try {
+    const [integration] = await db.select().from(integrationsTable).where(eq(integrationsTable.id, integrationId));
+    if (!integration) return res.status(404).json({ error: "Integration not found" });
+    const provider = OAUTH_PROVIDERS[integration.slug];
+    if (!provider) return res.status(400).json({ error: "Provider not supported" });
+    const clientId = process.env[provider.clientIdEnv];
+    const clientSecret = process.env[provider.clientSecretEnv];
+    if (!clientId || !clientSecret) {
+      return res.status(400).json({ error: "not_configured" });
+    }
+    const tokenBody = {
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      redirect_uri: getRedirectUri(),
+      grant_type: "authorization_code"
+    };
+    let tokenRes;
+    if (provider.tokenRequestStyle === "json") {
+      tokenRes = await fetch(provider.tokenUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(tokenBody)
+      });
+    } else {
+      tokenRes = await fetch(provider.tokenUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+        body: new URLSearchParams(tokenBody)
+      });
+    }
+    const tokenJson = await tokenRes.json().catch(() => ({}));
+    if (!tokenRes.ok || tokenJson.error) {
+      const msg = tokenJson.error_description || tokenJson.error || `HTTP ${tokenRes.status}`;
+      await db.update(integrationsTable).set({ status: "error", lastError: `Token exchange failed: ${msg}`, updatedAt: /* @__PURE__ */ new Date() }).where(eq(integrationsTable.id, integrationId));
+      return res.redirect(`${frontendBase}/integrations?oauth_error=${encodeURIComponent(msg)}`);
+    }
+    const accessTokenKey = provider.accessTokenKey ?? "access_token";
+    const refreshTokenKey = provider.refreshTokenKey ?? "refresh_token";
+    const accessToken = tokenJson[accessTokenKey];
+    const refreshToken = tokenJson[refreshTokenKey] ?? null;
+    const expiresIn = tokenJson.expires_in ? Number(tokenJson.expires_in) : null;
+    await db.update(integrationsTable).set({
+      status: "connected",
+      enabled: true,
+      accessToken,
+      refreshToken,
+      tokenExpiresAt: expiresIn ? new Date(Date.now() + expiresIn * 1e3) : null,
+      connectedAt: /* @__PURE__ */ new Date(),
+      lastError: null,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq(integrationsTable.id, integrationId));
+    res.redirect(`${frontendBase}/integrations?connected=${encodeURIComponent(integration.slug)}`);
+  } catch (err) {
+    req.log.error({ err }, "OAuth callback failed");
+    res.redirect(`${frontendBase}/integrations?oauth_error=internal_error`);
+  }
+});
 router6.post("/integrations/:id/disconnect", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const [updated] = await db.update(integrationsTable).set({ status: "disconnected", enabled: false, connectedAt: null, updatedAt: /* @__PURE__ */ new Date() }).where(eq(integrationsTable.id, id)).returning();
+    const [updated] = await db.update(integrationsTable).set({ status: "disconnected", enabled: false, connectedAt: null, accessToken: null, refreshToken: null, tokenExpiresAt: null, updatedAt: /* @__PURE__ */ new Date() }).where(eq(integrationsTable.id, id)).returning();
     if (!updated) return res.status(404).json({ error: "Integration not found" });
-    res.json(updated);
+    const { accessToken, refreshToken, ...safe } = updated;
+    res.json(safe);
   } catch (err) {
     req.log.error({ err }, "Failed to disconnect integration");
     res.status(500).json({ error: "Failed to disconnect integration" });
@@ -69041,10 +69512,10 @@ var OpenAI = class {
         throw new OpenAIError(`The \`provider\` option cannot be used with ${conflictingOptions.map((key) => `\`${key}\``).join(", ")}. Configure authentication and the base URL through the provider instead.`);
       }
     }
-    const { baseURL: baseURL3 = provider ? null : readEnv("OPENAI_BASE_URL"), apiKey: apiKey3 = provider ? null : readEnv("OPENAI_API_KEY") ?? null, adminAPIKey = provider ? null : readEnv("OPENAI_ADMIN_KEY") ?? null, organization = provider ? null : readEnv("OPENAI_ORG_ID") ?? null, project = provider ? null : readEnv("OPENAI_PROJECT_ID") ?? null, webhookSecret = readEnv("OPENAI_WEBHOOK_SECRET") ?? null, workloadIdentity, ...opts } = clientOptions;
+    const { baseURL: baseURL2 = provider ? null : readEnv("OPENAI_BASE_URL"), apiKey: apiKey2 = provider ? null : readEnv("OPENAI_API_KEY") ?? null, adminAPIKey = provider ? null : readEnv("OPENAI_ADMIN_KEY") ?? null, organization = provider ? null : readEnv("OPENAI_ORG_ID") ?? null, project = provider ? null : readEnv("OPENAI_PROJECT_ID") ?? null, webhookSecret = readEnv("OPENAI_WEBHOOK_SECRET") ?? null, workloadIdentity, ...opts } = clientOptions;
     const providerRuntime = provider ? configureProvider(provider) : void 0;
     const options = {
-      apiKey: apiKey3,
+      apiKey: apiKey2,
       adminAPIKey,
       organization,
       project,
@@ -69052,12 +69523,12 @@ var OpenAI = class {
       workloadIdentity,
       provider,
       ...opts,
-      baseURL: providerRuntime?.baseURL ?? (baseURL3 || `https://api.openai.com/v1`)
+      baseURL: providerRuntime?.baseURL ?? (baseURL2 || `https://api.openai.com/v1`)
     };
-    if (apiKey3 && workloadIdentity) {
+    if (apiKey2 && workloadIdentity) {
       throw new OpenAIError("The `apiKey` and `workloadIdentity` options are mutually exclusive");
     }
-    if (!providerRuntime && !apiKey3 && !adminAPIKey && !workloadIdentity) {
+    if (!providerRuntime && !apiKey2 && !adminAPIKey && !workloadIdentity) {
       throw new OpenAIError("Missing credentials. Please pass an `apiKey`, `workloadIdentity`, `adminAPIKey`, or set the `OPENAI_API_KEY` or `OPENAI_ADMIN_KEY` environment variable.");
     }
     if (!options.dangerouslyAllowBrowser && isRunningInBrowser()) {
@@ -69089,7 +69560,7 @@ var OpenAI = class {
     if (workloadIdentity) {
       this._workloadIdentityAuth = new WorkloadIdentityAuth(workloadIdentity, this.fetch);
     }
-    this.apiKey = typeof apiKey3 === "string" ? apiKey3 : null;
+    this.apiKey = typeof apiKey2 === "string" ? apiKey2 : null;
     this.adminAPIKey = adminAPIKey;
     this.organization = organization;
     this.project = project;
@@ -69192,12 +69663,12 @@ var OpenAI = class {
   async _callApiKey() {
     if (this._provider)
       return false;
-    const apiKey3 = this._options.apiKey;
-    if (typeof apiKey3 !== "function")
+    const apiKey2 = this._options.apiKey;
+    if (typeof apiKey2 !== "function")
       return false;
     let token;
     try {
-      token = await apiKey3();
+      token = await apiKey2();
     } catch (err) {
       if (err instanceof OpenAIError)
         throw err;
@@ -69214,8 +69685,8 @@ var OpenAI = class {
     return true;
   }
   buildURL(path2, query, defaultBaseURL) {
-    const baseURL3 = !__classPrivateFieldGet(this, _OpenAI_instances, "m", _OpenAI_baseURLOverridden).call(this) && defaultBaseURL || this.baseURL;
-    const url2 = isAbsoluteURL(path2) ? new URL(path2) : new URL(baseURL3 + (baseURL3.endsWith("/") && path2.startsWith("/") ? path2.slice(1) : path2));
+    const baseURL2 = !__classPrivateFieldGet(this, _OpenAI_instances, "m", _OpenAI_baseURLOverridden).call(this) && defaultBaseURL || this.baseURL;
+    const url2 = isAbsoluteURL(path2) ? new URL(path2) : new URL(baseURL2 + (baseURL2.endsWith("/") && path2.startsWith("/") ? path2.slice(1) : path2));
     const defaultQuery = this.defaultQuery();
     const pathQuery = Object.fromEntries(url2.searchParams);
     if (!isEmptyObj(defaultQuery) || !isEmptyObj(pathQuery)) {
@@ -69635,27 +70106,88 @@ function isUndiciDispatcherVersionMismatchError(error40) {
 }
 
 // ../../lib/integrations-openai-ai-server/src/client.ts
-var apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
-var baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
-if (!apiKey) {
-  throw new Error(
-    "OPENAI_API_KEY must be set."
-  );
+var PROVIDERS = [
+  { name: "openai", apiKeyEnv: "OPENAI_API_KEY" },
+  { name: "openrouter", baseURL: "https://openrouter.ai/api/v1", apiKeyEnv: "OPENROUTER_API_KEY", fallbackModel: "openai/gpt-4.1" },
+  // GitHub Models -- free via the existing GITHUB_TOKEN_4 PAT (used elsewhere
+  // in this ecosystem for repo writes), no separate signup. Actually serves
+  // real gpt-4.1 (same model family as the native OpenAI tier above), unlike
+  // the free-tier Llama/Mistral models further down this chain. Live-verified
+  // 2026-07-20 against the real endpoint before wiring in.
+  { name: "github-models", baseURL: "https://models.github.ai/inference", apiKeyEnv: "GITHUB_TOKEN_4", fallbackModel: "openai/gpt-4.1" },
+  // Qwen Cloud (Alibaba Cloud Model Studio, international dashscope-intl
+  // endpoint -- NOT the mainland Bailian console, separate account/URL).
+  // PAID pay-as-you-go, NOT free -- kept after github-models (real gpt-4.1,
+  // highest quality free-ish tier) but before the remaining free tiers below
+  // since it's cheap and has no shared-quota risk. Live-verified 2026-07-20.
+  { name: "qwen-cloud", baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1", apiKeyEnv: "QWENCLOUD_API_KEY", fallbackModel: "qwen3-coder-plus" },
+  { name: "cerebras", baseURL: "https://api.cerebras.ai/v1", apiKeyEnv: "CEREBRAS_API_KEY", fallbackModel: "gpt-oss-120b" },
+  { name: "mistral", baseURL: "https://api.mistral.ai/v1", apiKeyEnv: "MISTRAL_API_KEY", fallbackModel: "mistral-small-latest" },
+  { name: "groq", baseURL: "https://api.groq.com/openai/v1", apiKeyEnv: "GROQ_API_KEY", fallbackModel: "llama-3.3-70b-versatile" },
+  { name: "cohere-trial", baseURL: "https://api.cohere.com/compatibility/v1", apiKeyEnv: "COHERE_TRIAL_API_KEY", fallbackModel: "command-r-plus-08-2024" },
+  { name: "cohere", baseURL: "https://api.cohere.com/compatibility/v1", apiKeyEnv: "COHERE_API_KEY", fallbackModel: "command-r-plus-08-2024" },
+  { name: "openrouter-free", baseURL: "https://openrouter.ai/api/v1", apiKeyEnv: "OPENROUTER_API_KEY", fallbackModel: "poolside/laguna-m.1:free" }
+];
+var clientCache = /* @__PURE__ */ new Map();
+function clientFor(provider) {
+  const apiKey2 = process.env[provider.apiKeyEnv];
+  if (!apiKey2) return null;
+  const cacheKey = provider.name;
+  if (!clientCache.has(cacheKey)) {
+    clientCache.set(
+      cacheKey,
+      new OpenAI({ apiKey: apiKey2, ...provider.baseURL ? { baseURL: provider.baseURL } : {} })
+    );
+  }
+  return clientCache.get(cacheKey);
 }
-var openai = new OpenAI({
-  apiKey,
-  ...baseURL ? { baseURL } : {}
-});
+async function createWithFallback(params) {
+  let lastError = null;
+  for (const provider of PROVIDERS) {
+    const client = clientFor(provider);
+    if (!client) continue;
+    try {
+      const model = provider.fallbackModel ?? params.model;
+      console.log(`[llm-fallback] trying provider=${provider.name} model=${model}`);
+      return await client.chat.completions.create({ ...params, model });
+    } catch (err) {
+      lastError = err;
+      console.error(`[llm-fallback] provider=${provider.name} failed:`, err instanceof Error ? err.message : err);
+      continue;
+    }
+  }
+  throw lastError ?? new Error("No LLM provider available \u2014 set at least one of: " + PROVIDERS.map((p) => p.apiKeyEnv).join(", "));
+}
+var openai = {
+  chat: {
+    completions: {
+      create: createWithFallback
+    }
+  }
+};
 
 // ../../lib/integrations-openai-ai-server/src/image/client.ts
-var apiKey2 = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
-var baseURL2 = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
-if (!apiKey2) {
-  throw new Error("OPENAI_API_KEY must be set.");
+var apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+var baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+var _client = null;
+function getClient() {
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY must be set.");
+  }
+  if (!_client) {
+    _client = new OpenAI({
+      apiKey,
+      ...baseURL ? { baseURL } : {}
+    });
+  }
+  return _client;
 }
-var openai2 = new OpenAI({
-  apiKey: apiKey2,
-  ...baseURL2 ? { baseURL: baseURL2 } : {}
+var openai2 = new Proxy({}, {
+  get(_target, prop, receiver) {
+    const client = getClient();
+    const value = Reflect.get(client, prop, receiver);
+    return typeof value === "function" ? value.bind(client) : value;
+  }
 });
 
 // src/routes/openai.ts
@@ -69672,8 +70204,22 @@ router10.post("/conversations/:id/messages", async (req, res) => {
       [agent] = await db.insert(agentTable).values({}).returning();
     }
     await db.insert(messagesTable).values({ conversationId: id, role: "user", content });
+    const memories = await db.select().from(memoryTable).orderBy(desc(memoryTable.pinned), desc(memoryTable.updatedAt)).limit(30);
+    let systemPrompt = agent.systemPrompt;
+    if (memories.length > 0) {
+      const byCategory = {};
+      for (const m of memories) {
+        (byCategory[m.category] ??= []).push(`- ${m.key}: ${m.value}`);
+      }
+      const memoryBlock = Object.entries(byCategory).map(([cat, lines]) => `[${cat}]
+${lines.join("\n")}`).join("\n\n");
+      systemPrompt = `${agent.systemPrompt}
+
+--- Things you remember (persistent memory, use naturally, don't just recite) ---
+${memoryBlock}`;
+    }
     const chatMessages = [
-      { role: "system", content: agent.systemPrompt },
+      { role: "system", content: systemPrompt },
       ...history.map((m) => ({ role: m.role, content: m.content })),
       { role: "user", content }
     ];
@@ -69681,22 +70227,83 @@ router10.post("/conversations/:id/messages", async (req, res) => {
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     let fullResponse = "";
-    const stream = await openai.chat.completions.create({
-      model: "gpt-4.1",
-      max_completion_tokens: 8192,
-      messages: chatMessages,
-      stream: true
-    });
-    for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content;
-      if (delta) {
-        fullResponse += delta;
-        res.write(`data: ${JSON.stringify({ content: delta })}
+    let openaiStream;
+    try {
+      openaiStream = await openai.chat.completions.create({
+        model: "gpt-4.1",
+        max_completion_tokens: 8192,
+        messages: chatMessages,
+        stream: true
+      });
+    } catch (primaryErr) {
+      req.log.warn({ err: primaryErr }, "Primary OpenAI call failed, falling back to OpenRouter free tier");
+      const orKey = process.env.OPENROUTER_API_KEY;
+      if (!orKey) throw primaryErr;
+      const orRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${orKey}`,
+          "HTTP-Referer": "https://aria.donmatthews.live",
+          "X-Title": "ARIA"
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-oss-20b:free",
+          messages: chatMessages,
+          stream: true,
+          max_tokens: 8192
+        })
+      });
+      if (!orRes.ok || !orRes.body) throw primaryErr;
+      const reader = orRes.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line2 of lines) {
+          const trimmed = line2.trim();
+          if (!trimmed.startsWith("data: ")) continue;
+          const payload = trimmed.slice(6);
+          if (payload === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(payload);
+            const delta = parsed.choices?.[0]?.delta?.content;
+            if (delta) {
+              fullResponse += delta;
+              res.write(`data: ${JSON.stringify({ content: delta })}
 
 `);
+            }
+          } catch {
+          }
+        }
+      }
+      openaiStream = null;
+    }
+    if (openaiStream) {
+      for await (const chunk of openaiStream) {
+        const delta = chunk.choices[0]?.delta?.content;
+        if (delta) {
+          fullResponse += delta;
+          res.write(`data: ${JSON.stringify({ content: delta })}
+
+`);
+        }
       }
     }
     await db.insert(messagesTable).values({ conversationId: id, role: "assistant", content: fullResponse });
+    await db.insert(actionsTable).values({
+      type: "chat_reply",
+      description: content.length > 80 ? `${content.slice(0, 80)}...` : content,
+      metadata: JSON.stringify({ conversationId: id }),
+      status: "success"
+    }).catch((err) => {
+      req.log.warn({ err }, "Failed to record chat action to feed (non-fatal)");
+    });
     const msgCount = history.length + 2;
     await db.update(conversationsTable).set({ messageCount: msgCount, updatedAt: /* @__PURE__ */ new Date() }).where(eq(conversationsTable.id, id));
     res.write(`data: ${JSON.stringify({ done: true })}
@@ -69717,19 +70324,114 @@ router10.post("/conversations/:id/messages", async (req, res) => {
 });
 var openai_default = router10;
 
-// src/routes/index.ts
+// src/routes/apex.ts
+var import_express11 = __toESM(require_express2(), 1);
 var router11 = (0, import_express11.Router)();
-router11.use(health_default);
-router11.use(agent_default);
-router11.use(tasks_default);
-router11.use(conversations_default);
-router11.use(shell_default);
-router11.use(integrations_default);
-router11.use(memory_default);
-router11.use(actions_default);
-router11.use(workflows_default);
-router11.use("/openai", openai_default);
-var routes_default = router11;
+function apexBase() {
+  const base = process.env["APEX_BASE_URL"];
+  if (!base) throw new Error("APEX_BASE_URL is not configured");
+  return base.replace(/\/$/, "");
+}
+function apexHeaders() {
+  const token = process.env["APEX_ADMIN_TOKEN"];
+  if (!token) throw new Error("APEX_ADMIN_TOKEN is not configured");
+  return { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+}
+router11.get("/apex/tasks", async (req, res) => {
+  try {
+    const qs = new URLSearchParams(req.query).toString();
+    const r = await fetch(`${apexBase()}/api/tasks${qs ? `?${qs}` : ""}`, { headers: apexHeaders() });
+    const body = await r.json();
+    res.status(r.status).json(body);
+  } catch (err) {
+    req.log.error({ err }, "Failed to proxy Apex tasks");
+    res.status(502).json({ error: "Failed to reach Apex" });
+  }
+});
+router11.get("/apex/goals", async (req, res) => {
+  try {
+    const r = await fetch(`${apexBase()}/api/goals`, { headers: apexHeaders() });
+    const body = await r.json();
+    res.status(r.status).json(body);
+  } catch (err) {
+    req.log.error({ err }, "Failed to proxy Apex goals");
+    res.status(502).json({ error: "Failed to reach Apex" });
+  }
+});
+router11.post("/apex/goals", async (req, res) => {
+  try {
+    const r = await fetch(`${apexBase()}/api/goals`, {
+      method: "POST",
+      headers: apexHeaders(),
+      body: JSON.stringify(req.body)
+    });
+    const body = await r.json();
+    res.status(r.status).json(body);
+  } catch (err) {
+    req.log.error({ err }, "Failed to proxy Apex goal creation");
+    res.status(502).json({ error: "Failed to reach Apex" });
+  }
+});
+router11.get("/apex/projects", async (req, res) => {
+  try {
+    const r = await fetch(`${apexBase()}/api/projects`, { headers: apexHeaders() });
+    const body = await r.json();
+    res.status(r.status).json(body);
+  } catch (err) {
+    req.log.error({ err }, "Failed to proxy Apex projects");
+    res.status(502).json({ error: "Failed to reach Apex" });
+  }
+});
+router11.get("/apex/projects/status", async (req, res) => {
+  try {
+    const r = await fetch(`${apexBase()}/api/projects/status`, { headers: apexHeaders() });
+    const body = await r.json();
+    res.status(r.status).json(body);
+  } catch (err) {
+    req.log.error({ err }, "Failed to proxy Apex projects status");
+    res.status(502).json({ error: "Failed to reach Apex" });
+  }
+});
+router11.get("/apex/projects/:id", async (req, res) => {
+  try {
+    const r = await fetch(`${apexBase()}/api/projects/${req.params.id}`, { headers: apexHeaders() });
+    const body = await r.json();
+    res.status(r.status).json(body);
+  } catch (err) {
+    req.log.error({ err }, "Failed to proxy Apex project detail");
+    res.status(502).json({ error: "Failed to reach Apex" });
+  }
+});
+router11.patch("/apex/tasks/:id", async (req, res) => {
+  try {
+    const r = await fetch(`${apexBase()}/api/tasks/${req.params.id}`, {
+      method: "PATCH",
+      headers: apexHeaders(),
+      body: JSON.stringify(req.body)
+    });
+    const body = await r.json();
+    res.status(r.status).json(body);
+  } catch (err) {
+    req.log.error({ err }, "Failed to proxy Apex task update");
+    res.status(502).json({ error: "Failed to reach Apex" });
+  }
+});
+var apex_default = router11;
+
+// src/routes/index.ts
+var router12 = (0, import_express12.Router)();
+router12.use(health_default);
+router12.use(agent_default);
+router12.use(tasks_default);
+router12.use(conversations_default);
+router12.use(shell_default);
+router12.use(integrations_default);
+router12.use(memory_default);
+router12.use(actions_default);
+router12.use(workflows_default);
+router12.use("/openai", openai_default);
+router12.use(apex_default);
+var routes_default = router12;
 
 // src/lib/logger.ts
 var import_pino = __toESM(require_pino(), 1);
@@ -69750,9 +70452,9 @@ var logger = (0, import_pino.default)({
 });
 
 // src/app.ts
-var app = (0, import_express12.default)();
+var app = (0, import_express13.default)();
 app.use(
-  (0, import_pino_http.default)({
+  (0, import_pino_http.pinoHttp)({
     logger,
     serializers: {
       req(req) {
@@ -69771,8 +70473,8 @@ app.use(
   })
 );
 app.use((0, import_cors.default)());
-app.use(import_express12.default.json());
-app.use(import_express12.default.urlencoded({ extended: true }));
+app.use(import_express13.default.json());
+app.use(import_express13.default.urlencoded({ extended: true }));
 app.use("/api", routes_default);
 var app_default = app;
 
