@@ -1,0 +1,134 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.7.1-2",
+    "lastTouchedAt": "2026-07-24T14:37:25.215Z"
+  },
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "bailian-token-plan": {
+        "baseUrl": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+        "apiKey": "YOUR_API_KEY",
+        "api": "anthropic-messages",
+        "models": [
+          {
+            "id": "qwen3.8-max-preview",
+            "name": "qwen3.8-max-preview",
+            "reasoning": true,
+            "input": ["text"],
+            "contextWindow": 983616,
+            "maxTokens": 131072,
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "compat": { "thinkingFormat": "openai" }
+          },
+          {
+            "id": "qwen3.7-max",
+            "name": "qwen3.7-max",
+            "reasoning": false,
+            "input": ["text"],
+            "contextWindow": 1000000,
+            "maxTokens": 65536,
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "compat": { "thinkingFormat": "openai" }
+          },
+          {
+            "id": "qwen3.7-plus",
+            "name": "qwen3.7-plus",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "contextWindow": 1000000,
+            "maxTokens": 65536,
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "compat": { "thinkingFormat": "openai" }
+          },
+          {
+            "id": "qwen3.6-flash",
+            "name": "qwen3.6-flash",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "contextWindow": 1000000,
+            "maxTokens": 32768,
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "compat": { "thinkingFormat": "openai" }
+          },
+          {
+            "id": "glm-5.2",
+            "name": "glm-5.2",
+            "reasoning": false,
+            "input": ["text"],
+            "contextWindow": 1000000,
+            "maxTokens": 16384,
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "compat": { "thinkingFormat": "openai" }
+          },
+          {
+            "id": "deepseek-v4-pro",
+            "name": "deepseek-v4-pro",
+            "reasoning": false,
+            "input": ["text"],
+            "contextWindow": 163840,
+            "maxTokens": 32768,
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "workspace": "C:\\Users\\patri\\.openclaw\\workspace",
+      "model": {
+        "primary": "bailian-token-plan/qwen3.8-max-preview"
+      },
+      "models": {
+        "claude-cli/claude-opus-4-8": {},
+        "bailian-token-plan/qwen3.8-max-preview": {},
+        "bailian-token-plan/qwen3.7-max": {},
+        "bailian-token-plan/qwen3.7-plus": {},
+        "bailian-token-plan/qwen3.6-flash": {},
+        "bailian-token-plan/glm-5.2": {},
+        "bailian-token-plan/deepseek-v4-pro": {}
+      }
+    }
+  },
+  "gateway": {
+    "mode": "local",
+    "auth": {
+      "mode": "none"
+    },
+    "port": 18789,
+    "bind": "loopback",
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    },
+    "controlUi": {
+      "allowInsecureAuth": true
+    },
+    "nodes": {
+      "denyCommands": [
+        "camera.snap",
+        "camera.clip",
+        "screen.record",
+        "contacts.add",
+        "calendar.add",
+        "reminders.add",
+        "sms.send",
+        "sms.search"
+      ]
+    }
+  },
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
+  "tools": {
+    "profile": "coding"
+  },
+  "wizard": {
+    "securityAcknowledgedAt": "2026-07-24T14:37:24.741Z",
+    "lastRunAt": "2026-07-24T14:37:24.827Z",
+    "lastRunVersion": "2026.7.1-2",
+    "lastRunCommand": "onboard",
+    "lastRunMode": "local"
+  }
+}
