@@ -92,7 +92,7 @@ export default function Shell() {
 }
 
 function ActiveTerminal({ id }: { id: number }) {
-  const { data: session, isLoading, refetch } = useGetShellSession(id, { query: { enabled: !!id } })
+  const { data: session, isLoading, refetch } = useGetShellSession(id, {})
   const executeMutation = useExecuteCommand()
   const [input, setInput] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)

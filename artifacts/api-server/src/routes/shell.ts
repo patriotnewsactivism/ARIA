@@ -2,10 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { shellSessionsTable, shellCommandsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { exec } from "child_process";
-import { promisify } from "util";
 
-const execAsync = promisify(exec);
 const router = Router();
 
 // GET /shell/sessions
@@ -37,7 +34,8 @@ router.post("/shell/sessions", async (req, res) => {
 // GET /shell/sessions/:id
 router.get("/shell/sessions/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid session id" });
     const [session] = await db.select().from(shellSessionsTable).where(eq(shellSessionsTable.id, id));
     if (!session) return res.status(404).json({ error: "Session not found" });
     const commands = await db
@@ -55,7 +53,8 @@ router.get("/shell/sessions/:id", async (req, res) => {
 // DELETE /shell/sessions/:id
 router.delete("/shell/sessions/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid session id" });
     await db.update(shellSessionsTable).set({ status: "closed", updatedAt: new Date() }).where(eq(shellSessionsTable.id, id));
     res.status(204).end();
   } catch (err) {
@@ -64,61 +63,18 @@ router.delete("/shell/sessions/:id", async (req, res) => {
   }
 });
 
+function parseId(value: string): number | null {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
 // POST /shell/sessions/:id/execute
+// DISABLED: shell execution is disabled until it can be sandboxed and
+// protected by authentication. The previous implementation used regex-only
+// blocking that was trivially bypassable (see ARIA_DIAGNOSIS.md).
 router.post("/shell/sessions/:id/execute", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    const { command } = req.body;
-
-    const [session] = await db.select().from(shellSessionsTable).where(eq(shellSessionsTable.id, id));
-    if (!session) return res.status(404).json({ error: "Session not found" });
-
-    const startTime = Date.now();
-    let output = "";
-    let exitCode = 0;
-
-    // Safety: block destructive patterns and secret-exfiltration attempts
-    const blocked = /^\s*(rm\s+-rf|mkfs|dd\s+if=|:(){ :|:&};:|curl.*\$\(|wget.*\$\(|base64\s+-d|eval\s+\$)/i;
-    // Also block any attempt to read secret env vars
-    const secretLeak = /\$\s*(OPENAI_API_KEY|DATABASE_URL|SESSION_SECRET|AWS_|STRIPE_|GITHUB_TOKEN)/i;
-    if (blocked.test(command) || secretLeak.test(command)) {
-      output = "Command blocked by ARIA safety policy.";
-      exitCode = 1;
-    } else {
-      try {
-        const result = await execAsync(command, {
-          cwd: session.workingDir,
-          timeout: 15000,
-          // Strip secrets from child process environment
-          env: {
-            PATH: process.env.PATH,
-            HOME: "/home",
-            USER: "aria",
-            TERM: "xterm-256color",
-            LANG: "en_US.UTF-8",
-          },
-        });
-        output = (result.stdout + result.stderr).trim() || "(no output)";
-      } catch (e: unknown) {
-        const err = e as { stdout?: string; stderr?: string; code?: number };
-        output = ((err.stdout ?? "") + (err.stderr ?? "")).trim() || String(e);
-        exitCode = err.code ?? 1;
-      }
-    }
-
-    const duration = Date.now() - startTime;
-
-    const [cmd] = await db
-      .insert(shellCommandsTable)
-      .values({ sessionId: id, command, output, exitCode, executedAt: new Date() })
-      .returning();
-
-    await db
-      .update(shellSessionsTable)
-      .set({ commandCount: session.commandCount + 1, updatedAt: new Date() })
-      .where(eq(shellSessionsTable.id, id));
-
-    res.json({ id: cmd.id, command, output, exitCode, duration });
+    return res.status(503).json({ error: "Shell execution is temporarily disabled" });
   } catch (err) {
     req.log.error({ err }, "Failed to execute command");
     res.status(500).json({ error: "Failed to execute command" });

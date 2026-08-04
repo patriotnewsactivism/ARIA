@@ -1,15 +1,21 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { conversationsTable, messagesTable, agentTable, memoryTable, actionsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, count } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 
 const router = Router();
 
+function parseId(value: string): number | null {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
 // POST /conversations/:id/messages  — SSE streaming (mounted at /openai)
 router.post("/conversations/:id/messages", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid conversation id" });
     const { content } = req.body as { content: string };
 
     // Fetch conversation + history
@@ -157,10 +163,10 @@ router.post("/conversations/:id/messages", async (req, res) => {
     });
 
     // Update conversation stats
-    const msgCount = history.length + 2;
+    const [{ total }] = await db.select({ total: count() }).from(messagesTable).where(eq(messagesTable.conversationId, id));
     await db
       .update(conversationsTable)
-      .set({ messageCount: msgCount, updatedAt: new Date() })
+      .set({ messageCount: total, updatedAt: new Date() })
       .where(eq(conversationsTable.id, id));
 
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);

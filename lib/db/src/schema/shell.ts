@@ -1,4 +1,4 @@
-import { pgTable, text, integer, serial, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, serial, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -19,7 +19,9 @@ export const shellCommandsTable = pgTable("shell_commands", {
   output:     text("output"),
   exitCode:   integer("exit_code"),
   executedAt: timestamp("executed_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("shell_commands_session_id_idx").on(table.sessionId),
+]);
 
 export const insertShellSessionSchema = createInsertSchema(shellSessionsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertShellCommandSchema = createInsertSchema(shellCommandsTable).omit({ id: true });

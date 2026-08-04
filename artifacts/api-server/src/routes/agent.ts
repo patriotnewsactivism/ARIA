@@ -1,9 +1,14 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { agentTable, actionsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 const router = Router();
+
+function parseId(value: string): number | null {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
 
 // GET /agent
 router.get("/agent", async (req, res) => {
@@ -26,9 +31,14 @@ router.patch("/agent", async (req, res) => {
     if (!agent) {
       [agent] = await db.insert(agentTable).values({}).returning();
     }
+    const allowed = ["name", "persona", "status", "avatarUrl", "timezone", "language", "systemPrompt"];
+    const update: Record<string, unknown> = { updatedAt: new Date() };
+    for (const key of allowed) {
+      if (key in req.body) update[key] = req.body[key];
+    }
     const [updated] = await db
       .update(agentTable)
-      .set({ ...req.body, updatedAt: new Date() })
+      .set(update)
       .where(eq(agentTable.id, agent.id))
       .returning();
     res.json(updated);
@@ -44,15 +54,15 @@ router.get("/agent/stats", async (req, res) => {
     const { tasksTable, conversationsTable, shellCommandsTable, integrationsTable, workflowsTable, memoryTable } = await import("@workspace/db");
     const { count, eq } = await import("drizzle-orm");
 
-    const [taskStats] = await db
+    const [{ completed, inProgress, failed }] = await db
       .select({
-        completed: count(eq(tasksTable.status, "completed")),
-        inProgress: count(eq(tasksTable.status, "in_progress")),
-        failed: count(eq(tasksTable.status, "failed")),
+        completed: sql<number>`coalesce(sum(case when ${tasksTable.status} = 'completed' then 1 else 0 end), 0)::int`,
+        inProgress: sql<number>`coalesce(sum(case when ${tasksTable.status} = 'in_progress' then 1 else 0 end), 0)::int`,
+        failed: sql<number>`coalesce(sum(case when ${tasksTable.status} = 'failed' then 1 else 0 end), 0)::int`,
       })
       .from(tasksTable);
 
-    const [msgCount] = await db.select({ total: count() }).from(conversationsTable);
+    const [msgCount] = await db.select({ total: sql<number>`coalesce(sum(${conversationsTable.messageCount}), 0)::int` }).from(conversationsTable);
     const [cmdCount] = await db.select({ total: count() }).from(shellCommandsTable);
     const [intCount] = await db
       .select({ total: count() })
@@ -65,10 +75,10 @@ router.get("/agent/stats", async (req, res) => {
     const [memCount] = await db.select({ total: count() }).from(memoryTable);
 
     res.json({
-      tasksCompleted: Number(taskStats?.completed ?? 0),
-      tasksInProgress: Number(taskStats?.inProgress ?? 0),
-      tasksFailed: Number(taskStats?.failed ?? 0),
-      messagesExchanged: Number(msgCount?.total ?? 0) * 3,
+      tasksCompleted: Number(completed ?? 0),
+      tasksInProgress: Number(inProgress ?? 0),
+      tasksFailed: Number(failed ?? 0),
+      messagesExchanged: Number(msgCount?.total ?? 0),
       commandsExecuted: Number(cmdCount?.total ?? 0),
       integrationsActive: Number(intCount?.total ?? 0),
       workflowsActive: Number(wfCount?.total ?? 0),

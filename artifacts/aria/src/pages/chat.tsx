@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { useListConversations, useCreateConversation, useGetConversation, useDeleteConversation, useSendMessage } from "@workspace/api-client-react"
+import { useQueryClient } from "@tanstack/react-query"
 import { useLocation, useRoute } from "wouter"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -92,6 +93,7 @@ export default function Chat() {
 }
 
 function ActiveChat({ id }: { id: number }) {
+  const queryClient = useQueryClient()
   const { data: conversation, isLoading } = useGetConversation(id)
   const [input, setInput] = useState("")
   const [streamingMessage, setStreamingMessage] = useState("")
@@ -125,7 +127,11 @@ function ActiveChat({ id }: { id: number }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: userMessage }),
       });
-      
+
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => "Unknown error");
+        throw new Error(`AI request failed: ${res.status} ${errorText}`);
+      }
       if (!res.body) throw new Error("No response body")
       
       const reader = res.body.getReader();
@@ -158,9 +164,11 @@ function ActiveChat({ id }: { id: number }) {
       }
     } catch (err) {
       console.error("Chat error:", err)
+      setStreamingMessage("Sorry, something went wrong. Please try again.");
     } finally {
       setIsStreaming(false)
-      // trigger refetch to get final state
+      // Trigger refetch to get the final assistant message persisted on the server
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations", id] })
     }
   }
 

@@ -5,6 +5,13 @@ import { eq, desc } from "drizzle-orm";
 
 const router = Router();
 
+function parseId(value: string): number | null {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+const ALLOWED_MEMORY_FIELDS = ["key", "value", "category", "pinned"];
+
 // GET /memory
 router.get("/memory", async (req, res) => {
   try {
@@ -23,6 +30,9 @@ router.get("/memory", async (req, res) => {
 router.post("/memory", async (req, res) => {
   try {
     const { key, value, category, pinned } = req.body;
+    if (!key || typeof key !== "string" || !value || typeof value !== "string") {
+      return res.status(400).json({ error: "Key and value are required" });
+    }
     const [entry] = await db.insert(memoryTable).values({ key, value, category: category ?? "general", pinned: pinned ?? false }).returning();
     res.status(201).json(entry);
   } catch (err) {
@@ -34,8 +44,13 @@ router.post("/memory", async (req, res) => {
 // PATCH /memory/:id
 router.patch("/memory/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    const [entry] = await db.update(memoryTable).set({ ...req.body, updatedAt: new Date() }).where(eq(memoryTable.id, id)).returning();
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid memory id" });
+    const update: Record<string, unknown> = { updatedAt: new Date() };
+    for (const key of ALLOWED_MEMORY_FIELDS) {
+      if (key in req.body) update[key] = req.body[key];
+    }
+    const [entry] = await db.update(memoryTable).set(update).where(eq(memoryTable.id, id)).returning();
     if (!entry) return res.status(404).json({ error: "Memory entry not found" });
     res.json(entry);
   } catch (err) {
@@ -47,7 +62,8 @@ router.patch("/memory/:id", async (req, res) => {
 // DELETE /memory/:id
 router.delete("/memory/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid memory id" });
     await db.delete(memoryTable).where(eq(memoryTable.id, id));
     res.status(204).end();
   } catch (err) {

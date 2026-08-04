@@ -5,6 +5,15 @@ import { eq, desc, sql } from "drizzle-orm";
 
 const router = Router();
 
+function parseId(value: string): number | null {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+const ALLOWED_TASK_FIELDS = ["title", "description", "status", "priority", "dueAt", "completedAt", "tags", "result"];
+const VALID_TASK_STATUS = new Set(["pending", "in_progress", "completed", "failed", "cancelled"]);
+const VALID_TASK_PRIORITY = new Set(["low", "medium", "high", "urgent"]);
+
 // GET /tasks
 router.get("/tasks", async (req, res) => {
   try {
@@ -24,6 +33,12 @@ router.get("/tasks", async (req, res) => {
 router.post("/tasks", async (req, res) => {
   try {
     const { title, description, priority, dueAt, tags } = req.body;
+    if (!title || typeof title !== "string") {
+      return res.status(400).json({ error: "Title is required" });
+    }
+    if (priority && !VALID_TASK_PRIORITY.has(priority)) {
+      return res.status(400).json({ error: "Invalid priority" });
+    }
     const [task] = await db
       .insert(tasksTable)
       .values({ title, description, priority: priority ?? "medium", dueAt: dueAt ? new Date(dueAt) : undefined, tags })
@@ -59,7 +74,8 @@ router.get("/tasks/summary", async (req, res) => {
 // GET /tasks/:id
 router.get("/tasks/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid task id" });
     const [task] = await db.select().from(tasksTable).where(eq(tasksTable.id, id));
     if (!task) return res.status(404).json({ error: "Task not found" });
     res.json(task);
@@ -72,12 +88,26 @@ router.get("/tasks/:id", async (req, res) => {
 // PATCH /tasks/:id
 router.patch("/tasks/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    const update: Record<string, unknown> = { ...req.body, updatedAt: new Date() };
-    if (req.body.status === "completed" && !req.body.completedAt) {
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid task id" });
+
+    const update: Record<string, unknown> = { updatedAt: new Date() };
+    for (const key of ALLOWED_TASK_FIELDS) {
+      if (key in req.body) update[key] = req.body[key];
+    }
+
+    if (update.status && !VALID_TASK_STATUS.has(update.status as string)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+    if (update.priority && !VALID_TASK_PRIORITY.has(update.priority as string)) {
+      return res.status(400).json({ error: "Invalid priority" });
+    }
+
+    if (update.status === "completed" && !update.completedAt) {
       update.completedAt = new Date();
     }
-    if (req.body.dueAt) update.dueAt = new Date(req.body.dueAt as string);
+    if (update.dueAt) update.dueAt = new Date(update.dueAt as string);
+
     const [task] = await db.update(tasksTable).set(update).where(eq(tasksTable.id, id)).returning();
     if (!task) return res.status(404).json({ error: "Task not found" });
     res.json(task);
@@ -90,7 +120,8 @@ router.patch("/tasks/:id", async (req, res) => {
 // DELETE /tasks/:id
 router.delete("/tasks/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid task id" });
     await db.delete(tasksTable).where(eq(tasksTable.id, id));
     res.status(204).end();
   } catch (err) {

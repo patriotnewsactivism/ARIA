@@ -3,8 +3,36 @@ import { db } from "@workspace/db";
 import { integrationsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { OAUTH_PROVIDERS, getRedirectUri } from "../lib/oauth-providers.js";
+import crypto from "node:crypto";
 
 const router = Router();
+
+const OAUTH_SECRET = process.env.SESSION_SECRET || "change-me";
+
+function parseId(value: string): number | null {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+function signState(payload: string): string {
+  const signature = crypto.createHmac("sha256", OAUTH_SECRET).update(payload).digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+function verifyState(raw: string): { integrationId: number; ts: number } | null {
+  const parts = raw.split(".");
+  if (parts.length !== 2) return null;
+  const [payload, signature] = parts;
+  const expected = crypto.createHmac("sha256", OAUTH_SECRET).update(payload).digest("base64url");
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+    return null;
+  }
+  try {
+    return JSON.parse(Buffer.from(payload, "base64url").toString("utf-8"));
+  } catch {
+    return null;
+  }
+}
 
 // GET /integrations
 router.get("/integrations", async (req, res) => {
@@ -22,7 +50,8 @@ router.get("/integrations", async (req, res) => {
 // GET /integrations/:id
 router.get("/integrations/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid integration id" });
     const [row] = await db.select().from(integrationsTable).where(eq(integrationsTable.id, id));
     if (!row) return res.status(404).json({ error: "Integration not found" });
     const { accessToken, refreshToken, ...safe } = row;
@@ -36,9 +65,15 @@ router.get("/integrations/:id", async (req, res) => {
 // PATCH /integrations/:id
 router.patch("/integrations/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid integration id" });
     // Never allow the frontend to write tokens directly.
-    const { accessToken, refreshToken, tokenExpiresAt, ...body } = req.body ?? {};
+    const { accessToken, refreshToken, tokenExpiresAt, ...rawBody } = req.body ?? {};
+    const body: Record<string, unknown> = {};
+    const allowed = ["name", "description", "category", "iconUrl", "scopes", "enabled"];
+    for (const key of allowed) {
+      if (key in rawBody) body[key] = rawBody[key];
+    }
     const [row] = await db
       .update(integrationsTable)
       .set({ ...body, updatedAt: new Date() })
@@ -57,7 +92,8 @@ router.patch("/integrations/:id", async (req, res) => {
 // Real OAuth2 authorize-URL generation. No simulated/demo URLs.
 router.post("/integrations/:id/connect", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid integration id" });
     const [integration] = await db.select().from(integrationsTable).where(eq(integrationsTable.id, id));
     if (!integration) return res.status(404).json({ error: "Integration not found" });
 
@@ -82,7 +118,8 @@ router.post("/integrations/:id/connect", async (req, res) => {
       });
     }
 
-    const state = Buffer.from(JSON.stringify({ integrationId: id, ts: Date.now() })).toString("base64url");
+    const statePayload = Buffer.from(JSON.stringify({ integrationId: id, ts: Date.now() })).toString("base64url");
+    const state = signState(statePayload);
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: getRedirectUri(),
@@ -121,13 +158,11 @@ router.get("/integrations/oauth/callback", async (req, res) => {
     return res.status(400).json({ error: "Missing code or state" });
   }
 
-  let integrationId: number;
-  try {
-    const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf-8"));
-    integrationId = decoded.integrationId;
-  } catch {
+  const decoded = verifyState(state);
+  if (!decoded) {
     return res.status(400).json({ error: "Invalid state" });
   }
+  const integrationId = decoded.integrationId;
 
   try {
     const [integration] = await db.select().from(integrationsTable).where(eq(integrationsTable.id, integrationId));
@@ -206,7 +241,8 @@ router.get("/integrations/oauth/callback", async (req, res) => {
 // POST /integrations/:id/disconnect
 router.post("/integrations/:id/disconnect", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid integration id" });
     const [updated] = await db
       .update(integrationsTable)
       .set({ status: "disconnected", enabled: false, connectedAt: null, accessToken: null, refreshToken: null, tokenExpiresAt: null, updatedAt: new Date() })

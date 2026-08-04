@@ -7,6 +7,11 @@ import { Router } from "express";
 
 const router = Router();
 
+function parseId(value: string): number | null {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
 function apexBase(): string {
   const base = process.env["APEX_BASE_URL"];
   if (!base) throw new Error("APEX_BASE_URL is not configured");
@@ -102,7 +107,9 @@ router.get("/apex/projects/:id", async (req, res) => {
 // PATCH /apex/tasks/:id — update a real Apex task's status/priority
 router.patch("/apex/tasks/:id", async (req, res) => {
   try {
-    const r = await fetch(`${apexBase()}/api/tasks/${req.params.id}`, {
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid task id" });
+    const r = await fetch(`${apexBase()}/api/tasks/${id}`, {
       method: "PATCH",
       headers: apexHeaders(),
       body: JSON.stringify(req.body),
