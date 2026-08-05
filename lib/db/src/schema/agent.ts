@@ -1,4 +1,5 @@
-import { pgTable, text, integer, boolean, serial, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, serial, timestamp, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -13,7 +14,9 @@ export const agentTable = pgTable("agent", {
   systemPrompt: text("system_prompt").notNull().default("You are ARIA, a capable AI coworker that helps with tasks, code, writing, research, and business operations. Be concise, professional, and proactive."),
   createdAt:    timestamp("created_at").notNull().defaultNow(),
   updatedAt:    timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  statusCheck: check("agent_status_check", sql`${table.status} IN ('online', 'offline', 'busy', 'error')`),
+}));
 
 export const insertAgentSchema = createInsertSchema(agentTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertAgent = z.infer<typeof insertAgentSchema>;

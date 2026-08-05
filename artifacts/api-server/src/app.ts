@@ -4,6 +4,7 @@ import { pinoHttp } from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { requireAuth } from "./middlewares/auth";
+import { rateLimit } from "./middlewares/rate-limit";
 
 const app: Express = express();
 
@@ -49,6 +50,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(requireAuth);
+app.use(rateLimit({ windowMs: 60_000, max: 120, message: { error: "Too many requests" } }));
 
 app.use("/api", router);
 

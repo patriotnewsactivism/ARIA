@@ -46,7 +46,7 @@ export default function Workflows() {
                   </span>
                   <ArrowRight className="w-4 h-4 text-muted-foreground" />
                   <span className="flex items-center gap-1 bg-secondary px-2 py-1 rounded text-foreground">
-                    <WorkflowIcon className="w-3 h-3" /> {workflow.steps.split(',').length} steps
+                    <WorkflowIcon className="w-3 h-3" /> {workflow.steps.split(/[,\n]/).filter(Boolean).length} steps
                   </span>
                 </div>
               </div>

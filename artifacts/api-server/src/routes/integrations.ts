@@ -4,6 +4,7 @@ import { integrationsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { OAUTH_PROVIDERS, getRedirectUri } from "../lib/oauth-providers.js";
 import crypto from "node:crypto";
+import { encrypt as encryptToken, decrypt as decryptToken } from "../lib/crypto";
 
 const router = Router();
 
@@ -222,8 +223,8 @@ router.get("/integrations/oauth/callback", async (req, res) => {
       .set({
         status: "connected",
         enabled: true,
-        accessToken,
-        refreshToken,
+        accessToken: accessToken ? encryptToken(accessToken) : null,
+        refreshToken: refreshToken ? encryptToken(refreshToken) : null,
         tokenExpiresAt: expiresIn ? new Date(Date.now() + expiresIn * 1000) : null,
         connectedAt: new Date(),
         lastError: null,

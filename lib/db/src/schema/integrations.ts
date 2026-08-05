@@ -1,4 +1,5 @@
-import { pgTable, text, boolean, serial, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, serial, timestamp, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -20,7 +21,9 @@ export const integrationsTable = pgTable("integrations", {
   lastError:      text("last_error"),
   createdAt:   timestamp("created_at").notNull().defaultNow(),
   updatedAt:   timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  statusCheck: check("integrations_status_check", sql`${table.status} IN ('connected', 'disconnected', 'error', 'pending')`),
+}));
 
 export const insertIntegrationSchema = createInsertSchema(integrationsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertIntegration = z.infer<typeof insertIntegrationSchema>;
