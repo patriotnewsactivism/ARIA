@@ -9,7 +9,13 @@ router.get("/healthz", async (_req, res) => {
     await db.execute(sql`SELECT 1`);
     res.json({ status: "ok", database: "connected" });
   } catch (err) {
-    res.status(503).json({ status: "unhealthy", database: "disconnected" });
+    console.error("HEALTHZ_DB_ERROR:", err);
+    res.status(503).json({
+      status: "unhealthy",
+      database: "disconnected",
+      debug_error: err instanceof Error ? err.message : String(err),
+      debug_code: (err as any)?.code,
+    });
   }
 });
 
